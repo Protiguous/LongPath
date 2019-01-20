@@ -1,22 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.271
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pri.LongPath", "Pri.LongPath\Pri.LongPath.csproj", "{DF1F23CA-9DC6-4604-8400-6C4B656E0F5D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{4BE35CEA-F520-4EC7-9621-53FE061C8C35}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DBB6E65B-AAA4-445E-B442-44D3B068CA56}"
-	ProjectSection(SolutionItems) = preProject
-		LICENSE = LICENSE
-		nuget\LongPath.nuspec = nuget\LongPath.nuspec
-		README.md = README.md
-	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pri.LongPath.net40", "Pri.LongPath.net40\Pri.LongPath.net40.csproj", "{0D02A959-5B75-4492-BA65-2005EB5A12CC}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pri.LongPath.net20", "Pri.LongPath.net20\Pri.LongPath.net20.csproj", "{4FB40806-2B5C-4475-A653-71B37AAAEEF5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pri.Tests", "Pri.Tests\Pri.Tests.csproj", "{4BE35CEA-F520-4EC7-9621-53FE061C8C35}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,16 +21,11 @@ Global
 		{4BE35CEA-F520-4EC7-9621-53FE061C8C35}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4BE35CEA-F520-4EC7-9621-53FE061C8C35}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4BE35CEA-F520-4EC7-9621-53FE061C8C35}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0D02A959-5B75-4492-BA65-2005EB5A12CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0D02A959-5B75-4492-BA65-2005EB5A12CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0D02A959-5B75-4492-BA65-2005EB5A12CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0D02A959-5B75-4492-BA65-2005EB5A12CC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4FB40806-2B5C-4475-A653-71B37AAAEEF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4FB40806-2B5C-4475-A653-71B37AAAEEF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4FB40806-2B5C-4475-A653-71B37AAAEEF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4FB40806-2B5C-4475-A653-71B37AAAEEF5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5C0D55ED-2009-421C-90C4-595168801628}
 	EndGlobalSection
 EndGlobal

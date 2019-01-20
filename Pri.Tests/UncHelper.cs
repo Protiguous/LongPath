@@ -4,7 +4,7 @@
 // in any binaries, libraries, repositories, and source code (directly or derived) from
 // our binaries, libraries, projects, or solutions.
 //
-// This source code contained in "SafeTokenHandle.cs" belongs to Protiguous@Protiguous.com and
+// This source code contained in "UncHelper.cs" belongs to Protiguous@Protiguous.com and
 // Rick@AIBrain.org unless otherwise specified or the original license has
 // been overwritten by formatting.
 // (We try to avoid it from happening, but it does accidentally happen.)
@@ -37,32 +37,19 @@
 // Our GitHub address is "https://github.com/Protiguous".
 // Feel free to browse any source code we *might* make available.
 //
-// Project: "Pri.LongPath", "SafeTokenHandle.cs" was last formatted by Protiguous on 2019/01/12 at 8:28 PM.
+// Project: "Pri.Tests", "UncHelper.cs" was last formatted by Protiguous on 2019/01/12 at 8:17 PM.
 
-namespace Pri.LongPath {
+namespace Tests {
 
-    using System;
-    using System.Runtime.ConstrainedExecution;
-    using System.Runtime.InteropServices;
-    using System.Security;
-    using JetBrains.Annotations;
-    using Microsoft.Win32.SafeHandles;
+	using System;
+	using Pri.LongPath;
 
-    public class SafeTokenHandle : SafeHandleZeroOrMinusOneIsInvalid {
+	public static class UncHelper {
 
-        [NotNull]
-        public static SafeTokenHandle InvalidHandle => new SafeTokenHandle( IntPtr.Zero );
+		public static String GetUncFromPath( String path ) {
+			var fullPath = path.GetFullPath();
 
-        private SafeTokenHandle() : base( true ) { }
-
-        // 0 is an Invalid Handle
-        public SafeTokenHandle( IntPtr handle ) : base( true ) => this.SetHandle( handle );
-
-        [DllImport( "kernel32.dll", SetLastError = true )]
-        [SuppressUnmanagedCodeSecurity]
-        [ReliabilityContract( Consistency.WillNotCorruptState, Cer.Success )]
-        private static extern Boolean CloseHandle( IntPtr handle );
-
-        protected override Boolean ReleaseHandle() => CloseHandle( this.handle );
-    }
+			return $@"\\localhost\{fullPath[ 0 ]}$\{fullPath.Substring( 3 )}";
+		}
+	}
 }

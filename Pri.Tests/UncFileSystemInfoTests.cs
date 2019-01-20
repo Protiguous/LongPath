@@ -4,7 +4,7 @@
 // in any binaries, libraries, repositories, and source code (directly or derived) from
 // our binaries, libraries, projects, or solutions.
 //
-// This source code contained in "SafeTokenHandle.cs" belongs to Protiguous@Protiguous.com and
+// This source code contained in "UncFileSystemInfoTests.cs" belongs to Protiguous@Protiguous.com and
 // Rick@AIBrain.org unless otherwise specified or the original license has
 // been overwritten by formatting.
 // (We try to avoid it from happening, but it does accidentally happen.)
@@ -37,32 +37,79 @@
 // Our GitHub address is "https://github.com/Protiguous".
 // Feel free to browse any source code we *might* make available.
 //
-// Project: "Pri.LongPath", "SafeTokenHandle.cs" was last formatted by Protiguous on 2019/01/12 at 8:28 PM.
+// Project: "Pri.Tests", "UncFileSystemInfoTests.cs" was last formatted by Protiguous on 2019/01/12 at 8:16 PM.
 
-namespace Pri.LongPath {
+namespace Tests {
 
-    using System;
-    using System.Runtime.ConstrainedExecution;
-    using System.Runtime.InteropServices;
-    using System.Security;
-    using JetBrains.Annotations;
-    using Microsoft.Win32.SafeHandles;
+	using System;
+	using System.Diagnostics;
+	using System.Text;
+	using NUnit.Framework;
+	using Pri.LongPath;
+	using Directory = System.IO.Directory;
+	using File = System.IO.File;
 
-    public class SafeTokenHandle : SafeHandleZeroOrMinusOneIsInvalid {
+	[TestFixture]
+	public class UncFileSystemInfoTests {
 
-        [NotNull]
-        public static SafeTokenHandle InvalidHandle => new SafeTokenHandle( IntPtr.Zero );
+		[SetUp]
+		public void SetUp() {
+			directory = TestContext.CurrentContext.TestDirectory.Combine( "subdir" );
+			Directory.CreateDirectory( directory );
 
-        private SafeTokenHandle() : base( true ) { }
+			try {
+				uncDirectory = UncHelper.GetUncFromPath( directory );
+				filePath = new StringBuilder( directory ).Append( @"\" ).Append( Filename ).ToString();
+				uncFilePath = UncHelper.GetUncFromPath( filePath );
 
-        // 0 is an Invalid Handle
-        public SafeTokenHandle( IntPtr handle ) : base( true ) => this.SetHandle( handle );
+				using ( var writer = File.CreateText( filePath ) ) {
+					writer.WriteLine( "test" );
+				}
 
-        [DllImport( "kernel32.dll", SetLastError = true )]
-        [SuppressUnmanagedCodeSecurity]
-        [ReliabilityContract( Consistency.WillNotCorruptState, Cer.Success )]
-        private static extern Boolean CloseHandle( IntPtr handle );
+				Debug.Assert( Pri.LongPath.File.Exists( uncFilePath ) );
+			}
+			catch ( Exception ) {
+				if ( Directory.Exists( directory ) ) {
+					Directory.Delete( directory, true );
+				}
 
-        protected override Boolean ReleaseHandle() => CloseHandle( this.handle );
-    }
+				throw;
+			}
+		}
+
+		[TearDown]
+		public void TearDown() {
+			try {
+				if ( Pri.LongPath.File.Exists( filePath ) ) {
+					Pri.LongPath.File.Delete( filePath );
+				}
+			}
+			catch ( Exception e ) {
+				Trace.WriteLine( "Exception {0} deleting \"filePath\"", e.ToString() );
+
+				throw;
+			}
+			finally {
+				if ( directory.Exists() ) {
+					Pri.LongPath.Directory.Delete( directory, true );
+				}
+			}
+		}
+
+		private const String Filename = "filename.ext";
+
+		private static String directory;
+
+		private static String filePath;
+
+		private static String uncDirectory;
+
+		private static String uncFilePath;
+
+		[Test]
+		public void TestExtension() {
+			var fi = new FileInfo( filePath );
+			Assert.AreEqual( ".ext", fi.Extension );
+		}
+	}
 }

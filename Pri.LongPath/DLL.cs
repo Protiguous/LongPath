@@ -1,10 +1,10 @@
-// Copyright � Rick@AIBrain.org and Protiguous. All Rights Reserved.
+﻿// Copyright © Rick@AIBrain.org and Protiguous. All Rights Reserved.
 //
 // This entire copyright notice and license must be retained and must be kept visible
 // in any binaries, libraries, repositories, and source code (directly or derived) from
 // our binaries, libraries, projects, or solutions.
 //
-// This source code contained in "SafeTokenHandle.cs" belongs to Protiguous@Protiguous.com and
+// This source code contained in "DLL.cs" belongs to Protiguous@Protiguous.com and
 // Rick@AIBrain.org unless otherwise specified or the original license has
 // been overwritten by formatting.
 // (We try to avoid it from happening, but it does accidentally happen.)
@@ -37,32 +37,18 @@
 // Our GitHub address is "https://github.com/Protiguous".
 // Feel free to browse any source code we *might* make available.
 //
-// Project: "Pri.LongPath", "SafeTokenHandle.cs" was last formatted by Protiguous on 2019/01/12 at 8:28 PM.
+// Project: "Pri.LongPath", "DLL.cs" was last formatted by Protiguous on 2019/01/12 at 8:26 PM.
 
 namespace Pri.LongPath {
 
     using System;
-    using System.Runtime.ConstrainedExecution;
-    using System.Runtime.InteropServices;
-    using System.Security;
-    using JetBrains.Annotations;
-    using Microsoft.Win32.SafeHandles;
 
-    public class SafeTokenHandle : SafeHandleZeroOrMinusOneIsInvalid {
+    internal static class DLL {
 
-        [NotNull]
-        public static SafeTokenHandle InvalidHandle => new SafeTokenHandle( IntPtr.Zero );
+        internal const String advapi32 = "advapi32.dll";
 
-        private SafeTokenHandle() : base( true ) { }
+        internal const String coredll = "coredll.dll";
 
-        // 0 is an Invalid Handle
-        public SafeTokenHandle( IntPtr handle ) : base( true ) => this.SetHandle( handle );
-
-        [DllImport( "kernel32.dll", SetLastError = true )]
-        [SuppressUnmanagedCodeSecurity]
-        [ReliabilityContract( Consistency.WillNotCorruptState, Cer.Success )]
-        private static extern Boolean CloseHandle( IntPtr handle );
-
-        protected override Boolean ReleaseHandle() => CloseHandle( this.handle );
+        internal const String kernel32 = "kernel32.dll";
     }
 }

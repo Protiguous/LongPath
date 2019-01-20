@@ -4,7 +4,7 @@
 // in any binaries, libraries, repositories, and source code (directly or derived) from
 // our binaries, libraries, projects, or solutions.
 //
-// This source code contained in "SafeTokenHandle.cs" belongs to Protiguous@Protiguous.com and
+// This source code contained in "FileSystemInfoTests.cs" belongs to Protiguous@Protiguous.com and
 // Rick@AIBrain.org unless otherwise specified or the original license has
 // been overwritten by formatting.
 // (We try to avoid it from happening, but it does accidentally happen.)
@@ -37,32 +37,71 @@
 // Our GitHub address is "https://github.com/Protiguous".
 // Feel free to browse any source code we *might* make available.
 //
-// Project: "Pri.LongPath", "SafeTokenHandle.cs" was last formatted by Protiguous on 2019/01/12 at 8:28 PM.
+// Project: "Pri.Tests", "FileSystemInfoTests.cs" was last formatted by Protiguous on 2019/01/12 at 8:13 PM.
 
-namespace Pri.LongPath {
+namespace Tests {
 
     using System;
-    using System.Runtime.ConstrainedExecution;
-    using System.Runtime.InteropServices;
-    using System.Security;
-    using JetBrains.Annotations;
-    using Microsoft.Win32.SafeHandles;
+    using System.Diagnostics;
+    using System.Text;
+    using NUnit.Framework;
+    using Pri.LongPath;
 
-    public class SafeTokenHandle : SafeHandleZeroOrMinusOneIsInvalid {
+    [TestFixture]
+	public class FileSystemInfoTests {
 
-        [NotNull]
-        public static SafeTokenHandle InvalidHandle => new SafeTokenHandle( IntPtr.Zero );
+		[SetUp]
+		public void SetUp() {
+			rootTestDir = TestContext.CurrentContext.TestDirectory;
+			longPathDirectory = Util.MakeLongPath( rootTestDir );
 
-        private SafeTokenHandle() : base( true ) { }
+			longPathRoot = longPathDirectory.Substring( 0,
+				TestContext.CurrentContext.TestDirectory.Length + 1 + longPathDirectory.Substring( rootTestDir.Length + 1 ).IndexOf( '\\' ) );
 
-        // 0 is an Invalid Handle
-        public SafeTokenHandle( IntPtr handle ) : base( true ) => this.SetHandle( handle );
+			longPathDirectory.CreateDirectory();
+			Debug.Assert( longPathDirectory.Exists() );
+			longPathFilename = new StringBuilder( longPathDirectory ).Append( @"\" ).Append( Filename ).ToString();
 
-        [DllImport( "kernel32.dll", SetLastError = true )]
-        [SuppressUnmanagedCodeSecurity]
-        [ReliabilityContract( Consistency.WillNotCorruptState, Cer.Success )]
-        private static extern Boolean CloseHandle( IntPtr handle );
+			using ( var writer = File.CreateText( longPathFilename ) ) {
+				writer.WriteLine( "test" );
+			}
 
-        protected override Boolean ReleaseHandle() => CloseHandle( this.handle );
-    }
+			Debug.Assert( File.Exists( longPathFilename ) );
+		}
+
+		[TearDown]
+		public void TearDown() {
+			try {
+				if ( File.Exists( longPathFilename ) ) {
+					File.Delete( longPathFilename );
+				}
+			}
+			catch ( Exception e ) {
+				Trace.WriteLine( "Exception {0} deleting \"longPathFilename\"", e.ToString() );
+
+				throw;
+			}
+			finally {
+				if ( longPathRoot.Exists() ) {
+					Directory.Delete( longPathRoot, true );
+				}
+			}
+		}
+
+		private const String Filename = "filename.ext";
+
+		private static String longPathDirectory;
+
+		private static String longPathFilename;
+
+		private static String longPathRoot;
+
+		private static String rootTestDir;
+
+		[Test]
+		public void TestExtension() {
+			var fi = new FileInfo( longPathFilename );
+			Assert.AreEqual( ".ext", fi.Extension );
+		}
+	}
 }

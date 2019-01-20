@@ -1,23 +1,64 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
+﻿// Copyright © Rick@AIBrain.org and Protiguous. All Rights Reserved.
+//
+// This entire copyright notice and license must be retained and must be kept visible
+// in any binaries, libraries, repositories, and source code (directly or derived) from
+// our binaries, libraries, projects, or solutions.
+//
+// This source code contained in "FileSystemInfo.cs" belongs to Protiguous@Protiguous.com and
+// Rick@AIBrain.org unless otherwise specified or the original license has
+// been overwritten by formatting.
+// (We try to avoid it from happening, but it does accidentally happen.)
+//
+// Any unmodified portions of source code gleaned from other projects still retain their original
+// license and our thanks goes to those Authors. If you find your code in this source code, please
+// let us know so we can properly attribute you and include the proper license and/or copyright.
+//
+// If you want to use any of our code, you must contact Protiguous@Protiguous.com or
+// Sales@AIBrain.org for permission and a quote.
+//
+// Donations are accepted (for now) via
+//     bitcoin:1Mad8TxTqxKnMiHuZxArFvX8BuFEB9nqX2
+//     paypal@AIBrain.Org
+//     (We're still looking into other solutions! Any ideas?)
+//
+// =========================================================
+// Disclaimer:  Usage of the source code or binaries is AS-IS.
+//    No warranties are expressed, implied, or given.
+//    We are NOT responsible for Anything You Do With Our Code.
+//    We are NOT responsible for Anything You Do With Our Executables.
+//    We are NOT responsible for Anything You Do With Your Computer.
+// =========================================================
+//
+// Contact us by email if you have any questions, helpful criticism, or if you would like to use our code in your project(s).
+// For business inquiries, please contact me at Protiguous@Protiguous.com
+//
+// Our website can be found at "https://Protiguous.com/"
+// Our software can be found at "https://Protiguous.Software/"
+// Our GitHub address is "https://github.com/Protiguous".
+// Feel free to browse any source code we *might* make available.
+//
+// Project: "Pri.LongPath", "FileSystemInfo.cs" was last formatted by Protiguous on 2019/01/12 at 8:27 PM.
 
-namespace Pri.LongPath
-{
-	using System.Security.Permissions;
-	using FileAttributes = System.IO.FileAttributes;
-	using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
-	using DirectoryNotFoundException = System.IO.DirectoryNotFoundException;
+namespace Pri.LongPath {
 
-	public abstract class FileSystemInfo
-	{
-		protected string OriginalPath;
-		protected string FullPath;
-		protected FileInfo.State state;
-		protected readonly FileAttributeData data = new FileAttributeData();
-		protected int errorCode;
+    using System;
+    using System.IO;
+    using System.Runtime.InteropServices;
+    using System.Runtime.Serialization;
+    using JetBrains.Annotations;
+    using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
 
-	    public abstract System.IO.FileSystemInfo SystemInfo { get; }
+    public abstract class FileSystemInfo {
+
+        protected FileAttributeData data;
+
+        protected Int32 errorCode;
+
+        protected String FullPath;
+
+        protected String OriginalPath;
+
+        protected State state;
 
         // Summary:
         //     Gets or sets the attributes for the current file or directory.
@@ -41,345 +82,293 @@ namespace Pri.LongPath
         //
         //   System.IO.IOException:
         //     System.IO.FileSystemInfo.Refresh() cannot initialize the data.
-        public FileAttributes Attributes
-		{
-			get
-			{
-			    if (Common.IsRunningOnMono()) return SystemInfo.Attributes;
+        public FileAttributes Attributes {
+            get => this.FullPath.GetAttributes();
+            set => this.FullPath.SetAttributes( value );
+        }
 
-				return Common.GetAttributes(FullPath);
-			}
-			set
-			{
-			    if (Common.IsRunningOnMono())
-			        SystemInfo.Attributes = value;
-			    else
-			        Common.SetAttributes(FullPath, value);
-			}
-		}
+        //
+        // Summary:
+        //     Gets or sets the creation time of the current file or directory.
+        //
+        // Returns:
+        //     The creation date and time of the current System.IO.FileSystemInfo object.
+        //
+        // Exceptions:
+        //   System.IO.IOException:
+        //     System.IO.FileSystemInfo.Refresh() cannot initialize the data.
+        //
+        //   System.IO.DirectoryNotFoundException:
+        //     The specified path is invalid; for example, it is on an unmapped drive.
+        //
+        //   System.PlatformNotSupportedException:
+        //     The current operating system is not Windows NT or later.
+        //
+        //   System.ArgumentOutOfRangeException:
+        //     The caller attempts to set an invalid creation time.
+        public DateTime CreationTime {
+            get => this.CreationTimeUtc.ToLocalTime();
 
-		//
-		// Summary:
-		//     Gets or sets the creation time of the current file or directory.
-		//
-		// Returns:
-		//     The creation date and time of the current System.IO.FileSystemInfo object.
-		//
-		// Exceptions:
-		//   System.IO.IOException:
-		//     System.IO.FileSystemInfo.Refresh() cannot initialize the data.
-		//
-		//   System.IO.DirectoryNotFoundException:
-		//     The specified path is invalid; for example, it is on an unmapped drive.
-		//
-		//   System.PlatformNotSupportedException:
-		//     The current operating system is not Windows NT or later.
-		//
-		//   System.ArgumentOutOfRangeException:
-		//     The caller attempts to set an invalid creation time.
-		public DateTime CreationTime
-		{
-			get
-			{
-			    if(Common.IsRunningOnMono()) return SystemInfo.CreationTime;
-                return CreationTimeUtc.ToLocalTime();
-			}
+            set => this.CreationTimeUtc = value.ToUniversalTime();
+        }
 
-			set
-			{
-			    if (Common.IsRunningOnMono())
-			        SystemInfo.CreationTime = value;
-			    else
-			        CreationTimeUtc = value.ToUniversalTime();
-			}
-		}
+        //
+        // Summary:
+        //     Gets or sets the creation time, in coordinated universal time (UTC), of the
+        //     current file or directory.
+        //
+        // Returns:
+        //     The creation date and time in UTC format of the current System.IO.FileSystemInfo
+        //     object.
+        //
+        // Exceptions:
+        //   System.IO.IOException:
+        //     System.IO.FileSystemInfo.Refresh() cannot initialize the data.
+        //
+        //   System.IO.DirectoryNotFoundException:
+        //     The specified path is invalid; for example, it is on an unmapped drive.
+        //
+        //   System.PlatformNotSupportedException:
+        //     The current operating system is not Windows NT or later.
+        //
+        //   System.ArgumentOutOfRangeException:
+        //     The caller attempts to set an invalid access time.
+        public DateTime CreationTimeUtc {
+            get {
 
-		//
-		// Summary:
-		//     Gets or sets the creation time, in coordinated universal time (UTC), of the
-		//     current file or directory.
-		//
-		// Returns:
-		//     The creation date and time in UTC format of the current System.IO.FileSystemInfo
-		//     object.
-		//
-		// Exceptions:
-		//   System.IO.IOException:
-		//     System.IO.FileSystemInfo.Refresh() cannot initialize the data.
-		//
-		//   System.IO.DirectoryNotFoundException:
-		//     The specified path is invalid; for example, it is on an unmapped drive.
-		//
-		//   System.PlatformNotSupportedException:
-		//     The current operating system is not Windows NT or later.
-		//
-		//   System.ArgumentOutOfRangeException:
-		//     The caller attempts to set an invalid access time.
-		public DateTime CreationTimeUtc
-		{
-			get
-			{
-			    if (Common.IsRunningOnMono()) return SystemInfo.CreationTimeUtc;
+                if ( this.state == State.Uninitialized ) {
+                    this.Refresh();
+                }
 
-                if (state == State.Uninitialized)
-				{
-					Refresh();
-				}
-				if (state == State.Error)
-					Common.ThrowIOError(errorCode, FullPath);
+                if ( this.state == State.Error ) {
+                    Common.ThrowIOError( this.errorCode, this.FullPath );
+                }
 
-				long fileTime = ((long)data.ftCreationTime.dwHighDateTime << 32) | (data.ftCreationTime.dwLowDateTime & 0xffffffff);
-				return DateTime.FromFileTimeUtc(fileTime);
-			}
-			set
-			{
-			    if (Common.IsRunningOnMono())
-			    {
-			        SystemInfo.CreationTimeUtc = value;
-			        return;
-			    }
+                var fileTime = ( ( Int64 ) this.data.ftCreationTime.dwHighDateTime << 32 ) | ( this.data.ftCreationTime.dwLowDateTime & 0xffffffff );
 
-                if (this is DirectoryInfo)
-					Directory.SetCreationTimeUtc(FullPath, value);
-				else
-					File.SetCreationTimeUtc(FullPath, value);
-				state = State.Uninitialized;
-			}
-		}
+                return DateTime.FromFileTimeUtc( fileTime );
+            }
 
-		public DateTime LastWriteTime
-		{
-			get
-			{
-			    if (Common.IsRunningOnMono()) return SystemInfo.LastWriteTime;
+            set {
 
-                return LastWriteTimeUtc.ToLocalTime();
-			}
-			set
-			{
-			    if (Common.IsRunningOnMono()) SystemInfo.LastWriteTime = value;
-                else LastWriteTimeUtc = value.ToUniversalTime();
-			}
-		}
+                if ( this is DirectoryInfo ) {
+                    Directory.SetCreationTimeUtc( this.FullPath, value );
+                }
+                else {
+                    File.SetCreationTimeUtc( this.FullPath, value );
+                }
 
-		private static void ThrowLastWriteTimeUtcIOError(int errorCode, String maybeFullPath)
-		{
-			// This doesn't have to be perfect, but is a perf optimization.
-			bool isInvalidPath = errorCode == NativeMethods.ERROR_INVALID_NAME || errorCode == NativeMethods.ERROR_BAD_PATHNAME;
-			String str = isInvalidPath ? Path.GetFileName(maybeFullPath) : maybeFullPath;
+                this.state = State.Uninitialized;
+            }
+        }
 
-			switch (errorCode)
-			{
-				case NativeMethods.ERROR_FILE_NOT_FOUND:
-					break;
+        public String DisplayPath { get; set; }
 
-				case NativeMethods.ERROR_PATH_NOT_FOUND:
-					break;
+        public abstract Boolean Exists { get; }
 
-				case NativeMethods.ERROR_ACCESS_DENIED:
-					if (str.Length == 0)
-						throw new UnauthorizedAccessException("Empty path");
-					else
-						throw new UnauthorizedAccessException(String.Format("Access denied accessing {0}", str));
+        [CanBeNull]
+        public String Extension => this.FullPath.GetExtension();
 
-				case NativeMethods.ERROR_ALREADY_EXISTS:
-					if (str.Length == 0)
-						goto default;
-					throw new System.IO.IOException(String.Format("File {0}", str), NativeMethods.MakeHRFromErrorCode(errorCode));
+        public virtual String FullName => this.FullPath;
 
-				case NativeMethods.ERROR_FILENAME_EXCED_RANGE:
-					throw new System.IO.PathTooLongException("Path too long");
+        public DateTime LastAccessTime {
+            get => this.LastAccessTimeUtc.ToLocalTime();
+            set => this.LastAccessTimeUtc = value.ToUniversalTime();
+        }
 
-				case NativeMethods.ERROR_INVALID_DRIVE:
-					throw new System.IO.DriveNotFoundException(String.Format("Drive {0} not found", str));
+        public DateTime LastAccessTimeUtc {
+            get {
 
-				case NativeMethods.ERROR_INVALID_PARAMETER:
-					throw new System.IO.IOException(NativeMethods.GetMessage(errorCode), NativeMethods.MakeHRFromErrorCode(errorCode));
+                if ( this.state == State.Uninitialized ) {
+                    this.Refresh();
+                }
 
-				case NativeMethods.ERROR_SHARING_VIOLATION:
-					if (str.Length == 0)
-						throw new System.IO.IOException("Sharing violation with empty filename", NativeMethods.MakeHRFromErrorCode(errorCode));
-					else
-						throw new System.IO.IOException(String.Format("Sharing violation: {0}", str), NativeMethods.MakeHRFromErrorCode(errorCode));
+                if ( this.state == State.Error ) {
+                    Common.ThrowIOError( this.errorCode, this.FullPath );
+                }
 
-				case NativeMethods.ERROR_FILE_EXISTS:
-					if (str.Length == 0)
-						goto default;
-					throw new System.IO.IOException(String.Format("File exists {0}", str), NativeMethods.MakeHRFromErrorCode(errorCode));
+                var fileTime = ( ( Int64 ) this.data.ftLastAccessTime.dwHighDateTime << 32 ) | ( this.data.ftLastAccessTime.dwLowDateTime & 0xffffffff );
 
-				case NativeMethods.ERROR_OPERATION_ABORTED:
-					throw new OperationCanceledException();
+                return DateTime.FromFileTimeUtc( fileTime );
+            }
 
-				default:
-					throw new System.IO.IOException(NativeMethods.GetMessage(errorCode), NativeMethods.MakeHRFromErrorCode(errorCode));
-			}
-		}
-		public DateTime LastWriteTimeUtc
-		{
-			get
-			{
-			    if (Common.IsRunningOnMono()) return SystemInfo.LastWriteTimeUtc;
+            set {
 
+                if ( this is DirectoryInfo ) {
+                    Directory.SetLastAccessTimeUtc( this.FullPath, value );
+                }
+                else {
+                    File.SetLastAccessTimeUtc( this.FullPath, value );
+                }
 
-                if (state == State.Uninitialized)
-				{
-					Refresh();
-				}
-				if (state == State.Error)
-					ThrowLastWriteTimeUtcIOError(errorCode, FullPath);
+                this.state = State.Uninitialized;
+            }
+        }
 
-				long fileTime = ((long)data.ftLastWriteTime.dwHighDateTime << 32) | (data.ftLastWriteTime.dwLowDateTime & 0xffffffff);
-				return DateTime.FromFileTimeUtc(fileTime);
-			}
-			set
-			{
-			    if (Common.IsRunningOnMono())
-			    {
-			        SystemInfo.LastWriteTimeUtc = value;
-			        return;
-			    }
+        public DateTime LastWriteTime {
+            get => this.LastWriteTimeUtc.ToLocalTime();
+            set => this.LastWriteTimeUtc = value.ToUniversalTime();
+        }
 
+        public DateTime LastWriteTimeUtc {
+            get {
 
-                if (this is DirectoryInfo)
-					Directory.SetLastWriteTimeUtc(FullPath, value);
-				else
-					File.SetLastWriteTimeUtc(FullPath, value);
-				state = State.Uninitialized;
-			}
-		}
+                if ( this.state == State.Uninitialized ) {
+                    this.Refresh();
+                }
 
-		public DateTime LastAccessTime
-		{
-			get
-			{
-			    if (Common.IsRunningOnMono()) return SystemInfo.LastAccessTime;
+                if ( this.state == State.Error ) {
+                    ThrowLastWriteTimeUtcIOError( this.errorCode, this.FullPath );
+                }
 
-                return LastAccessTimeUtc.ToLocalTime();
-			}
-			set
-			{
-			    if (Common.IsRunningOnMono()) SystemInfo.LastAccessTime = value;
-			    else LastAccessTimeUtc = value.ToUniversalTime();
-			}
-		}
+                var fileTime = ( ( Int64 ) this.data.ftLastWriteTime.dwHighDateTime << 32 ) | ( this.data.ftLastWriteTime.dwLowDateTime & 0xffffffff );
 
-		public DateTime LastAccessTimeUtc
-		{
-			get
-			{
-			    if (Common.IsRunningOnMono()) return SystemInfo.LastAccessTimeUtc;
+                return DateTime.FromFileTimeUtc( fileTime );
+            }
 
-                if (state == State.Uninitialized)
-				{
-					Refresh();
-				}
-				if (state == State.Error)
-					Common.ThrowIOError(errorCode, FullPath);
+            set {
 
-				long fileTime = ((long)data.ftLastAccessTime.dwHighDateTime << 32) | (data.ftLastAccessTime.dwLowDateTime & 0xffffffff);
-				return DateTime.FromFileTimeUtc(fileTime);
-			}
-			set
-			{
-			    if (Common.IsRunningOnMono())
-			    {
-			        SystemInfo.LastAccessTimeUtc = value;
-			        return;
-			    }
+                if ( this is DirectoryInfo ) {
+                    Directory.SetLastWriteTimeUtc( this.FullPath, value ); //which is better?
+                }
+                else {
+                    File.SetLastWriteTimeUtc( this.FullPath, value );
+                }
 
+                this.state = State.Uninitialized;
+            }
+        }
 
-                if (this is DirectoryInfo)
-					Directory.SetLastAccessTimeUtc(FullPath, value);
-				else
-					File.SetLastAccessTimeUtc(FullPath, value);
-				state = State.Uninitialized;
-			}
-		}
+        public abstract String Name { get; }
 
-		public virtual string FullName
-		{
-			get { return FullPath; }
-		}
+        public abstract System.IO.FileSystemInfo SystemInfo { get; }
 
-		public string Extension
-		{
-			get
-			{
-				return Path.GetExtension(FullPath);
-			}
-		}
+        protected enum State {
 
-		public abstract string Name { get; }
-		public abstract bool Exists { get; }
-		internal string DisplayPath { get; set; }
+            Uninitialized,
 
-		protected enum State
-		{
-			Uninitialized, Initialized, Error
-		}
+            Initialized,
 
-		protected class FileAttributeData
-		{
-			public System.IO.FileAttributes fileAttributes;
-			public FILETIME ftCreationTime;
-			public FILETIME ftLastAccessTime;
-			public FILETIME ftLastWriteTime;
-			public int fileSizeHigh;
-			public int fileSizeLow;
+            Error
+        }
 
-			internal void From(NativeMethods.WIN32_FIND_DATA findData)
-			{
-				fileAttributes = findData.dwFileAttributes;
-				ftCreationTime = findData.ftCreationTime;
-				ftLastAccessTime = findData.ftLastAccessTime;
-				ftLastWriteTime = findData.ftLastWriteTime;
-				fileSizeHigh = findData.nFileSizeHigh;
-				fileSizeLow = findData.nFileSizeLow;
-			}
-		}
+        private static void ThrowLastWriteTimeUtcIOError( Int32 errorCode, String maybeFullPath ) {
 
-		public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
-		{
-			//(new FileIOPermission(FileIOPermissionAccess.PathDiscovery, this.FullPath)).Demand();
-			info.AddValue("OriginalPath", this.OriginalPath, typeof(string));
-			info.AddValue("FullPath", this.FullPath, typeof(string));
-		}
+            // This doesn't have to be perfect, but is a perf optimization.
+            var isInvalidPath = errorCode == NativeMethods.ERROR_INVALID_NAME || errorCode == NativeMethods.ERROR_BAD_PATHNAME;
+            var str = isInvalidPath ? maybeFullPath.GetFileName() : maybeFullPath;
 
-		public void Refresh()
-		{
-			try
-			{
-				NativeMethods.WIN32_FIND_DATA findData;
-				// TODO: BeginFind fails on "\\?\c:\"
+            switch ( errorCode ) {
+                case NativeMethods.ERROR_FILE_NOT_FOUND: break;
 
-				string normalizedPathWithSearchPattern = Path.NormalizeLongPath(new DirectoryInfo(FullPath).Parent == null ? Path.Combine(FullPath, "*") : FullPath);
+                case NativeMethods.ERROR_PATH_NOT_FOUND: break;
 
-				using (var handle = Directory.BeginFind(normalizedPathWithSearchPattern, out findData))
-				{
-					if (handle == null)
-					{
-						state = State.Error;
-						errorCode = Marshal.GetLastWin32Error();
-					}
-					else
-					{
-						data.From(findData);
-						state = State.Initialized;
-					}
-				}
-			}
-			catch (DirectoryNotFoundException)
-			{
-				state = State.Error;
-				errorCode = NativeMethods.ERROR_PATH_NOT_FOUND;
-			}
-			catch (Exception)
-			{
-				if (state != State.Error)
-					Common.ThrowIOError(Marshal.GetLastWin32Error(), FullPath);
-			}
-		}
+                case NativeMethods.ERROR_ACCESS_DENIED:
 
-		public abstract void Delete();
-	}
+                    if ( str.Length == 0 ) {
+                        throw new UnauthorizedAccessException( "Empty path" );
+                    }
+                    else {
+                        throw new UnauthorizedAccessException( $"Access denied accessing {str}" );
+                    }
+
+                case NativeMethods.ERROR_ALREADY_EXISTS:
+
+                    if ( str.Length == 0 ) {
+                        goto default;
+                    }
+
+                    throw new IOException( $"File {str}", NativeMethods.MakeHRFromErrorCode( errorCode ) );
+
+                case NativeMethods.ERROR_FILENAME_EXCED_RANGE: throw new PathTooLongException( "Path too long" );
+
+                case NativeMethods.ERROR_INVALID_DRIVE: throw new DriveNotFoundException( $"Drive {str} not found" );
+
+                case NativeMethods.ERROR_INVALID_PARAMETER: throw new IOException( NativeMethods.GetMessage( errorCode ), NativeMethods.MakeHRFromErrorCode( errorCode ) );
+
+                case NativeMethods.ERROR_SHARING_VIOLATION:
+
+                    if ( str.Length == 0 ) {
+                        throw new IOException( "Sharing violation with empty filename", NativeMethods.MakeHRFromErrorCode( errorCode ) );
+                    }
+                    else {
+                        throw new IOException( $"Sharing violation: {str}", NativeMethods.MakeHRFromErrorCode( errorCode ) );
+                    }
+
+                case NativeMethods.ERROR_FILE_EXISTS:
+
+                    if ( str.Length == 0 ) {
+                        goto default;
+                    }
+
+                    throw new IOException( $"File exists {str}", NativeMethods.MakeHRFromErrorCode( errorCode ) );
+
+                case NativeMethods.ERROR_OPERATION_ABORTED: throw new OperationCanceledException();
+
+                default: throw new IOException( NativeMethods.GetMessage( errorCode ), NativeMethods.MakeHRFromErrorCode( errorCode ) );
+            }
+        }
+
+        public abstract void Delete();
+
+        public virtual void GetObjectData( [NotNull] SerializationInfo info, StreamingContext context ) {
+            info.AddValue( "OriginalPath", this.OriginalPath, typeof( String ) );
+            info.AddValue( "FullPath", this.FullPath, typeof( String ) );
+        }
+
+        public void Refresh() {
+            try {
+
+                // TODO: BeginFind fails on "\\?\c:\"
+
+                var normalizedPathWithSearchPattern = this.FullPath.NormalizeLongPath();
+
+                using ( var handle = Directory.BeginFind( normalizedPathWithSearchPattern, out var findData ) ) {
+                    if ( handle == null ) {
+                        this.state = State.Error;
+                        this.errorCode = Marshal.GetLastWin32Error();
+                    }
+                    else {
+                        this.data = new FileAttributeData( findData );
+                        this.state = State.Initialized;
+                    }
+                }
+            }
+            catch ( DirectoryNotFoundException ) {
+                this.state = State.Error;
+                this.errorCode = NativeMethods.ERROR_PATH_NOT_FOUND;
+            }
+            catch ( Exception ) {
+                if ( this.state != State.Error ) {
+                    Common.ThrowIOError( Marshal.GetLastWin32Error(), this.FullPath );
+                }
+            }
+        }
+
+        protected class FileAttributeData {
+
+            public readonly FileAttributes fileAttributes;
+
+            public readonly Int32 fileSizeHigh;
+
+            public readonly Int32 fileSizeLow;
+
+            public FILETIME ftCreationTime;
+
+            public FILETIME ftLastAccessTime;
+
+            public FILETIME ftLastWriteTime;
+
+            public FileAttributeData( NativeMethods.WIN32_FIND_DATA findData ) {
+                this.fileAttributes = findData.dwFileAttributes;
+                this.ftCreationTime = findData.ftCreationTime;
+                this.ftLastAccessTime = findData.ftLastAccessTime;
+                this.ftLastWriteTime = findData.ftLastWriteTime;
+                this.fileSizeHigh = findData.nFileSizeHigh;
+                this.fileSizeLow = findData.nFileSizeLow;
+            }
+
+            public FileAttributeData() { }
+        }
+    }
 }

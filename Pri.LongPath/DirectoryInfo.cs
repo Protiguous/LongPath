@@ -1,394 +1,280 @@
-using System;
-using System.Collections.Generic;
-using System.Security.AccessControl;
-#if NET_2_0
-using System.Runtime.CompilerServices;
-#else
-using System.Linq;
-#endif
+// Copyright © Rick@AIBrain.org and Protiguous. All Rights Reserved.
+//
+// This entire copyright notice and license must be retained and must be kept visible
+// in any binaries, libraries, repositories, and source code (directly or derived) from
+// our binaries, libraries, projects, or solutions.
+//
+// This source code contained in "DirectoryInfo.cs" belongs to Protiguous@Protiguous.com and
+// Rick@AIBrain.org unless otherwise specified or the original license has
+// been overwritten by formatting.
+// (We try to avoid it from happening, but it does accidentally happen.)
+//
+// Any unmodified portions of source code gleaned from other projects still retain their original
+// license and our thanks goes to those Authors. If you find your code in this source code, please
+// let us know so we can properly attribute you and include the proper license and/or copyright.
+//
+// If you want to use any of our code, you must contact Protiguous@Protiguous.com or
+// Sales@AIBrain.org for permission and a quote.
+//
+// Donations are accepted (for now) via
+//     bitcoin:1Mad8TxTqxKnMiHuZxArFvX8BuFEB9nqX2
+//     paypal@AIBrain.Org
+//     (We're still looking into other solutions! Any ideas?)
+//
+// =========================================================
+// Disclaimer:  Usage of the source code or binaries is AS-IS.
+//    No warranties are expressed, implied, or given.
+//    We are NOT responsible for Anything You Do With Our Code.
+//    We are NOT responsible for Anything You Do With Our Executables.
+//    We are NOT responsible for Anything You Do With Your Computer.
+// =========================================================
+//
+// Contact us by email if you have any questions, helpful criticism, or if you would like to use our code in your project(s).
+// For business inquiries, please contact me at Protiguous@Protiguous.com
+//
+// Our website can be found at "https://Protiguous.com/"
+// Our software can be found at "https://Protiguous.Software/"
+// Our GitHub address is "https://github.com/Protiguous".
+// Feel free to browse any source code we *might* make available.
+//
+// Project: "Pri.LongPath", "DirectoryInfo.cs" was last formatted by Protiguous on 2019/01/12 at 8:26 PM.
 
-namespace Pri.LongPath
-{
-	using SearchOption = System.IO.SearchOption;
-	using IOException = System.IO.IOException;
+namespace Pri.LongPath {
 
-	public class DirectoryInfo : FileSystemInfo
-	{
-		private readonly string _name;
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Security.AccessControl;
+    using JetBrains.Annotations;
 
-	    public override System.IO.FileSystemInfo SystemInfo { get { return SysDirectoryInfo; } }
+    public class DirectoryInfo : FileSystemInfo {
 
-        private System.IO.DirectoryInfo SysDirectoryInfo
-	    {
-	        get
-	        {
-	            return new System.IO.DirectoryInfo(FullPath);
-	        }
-	    }
+        [NotNull]
+        private System.IO.DirectoryInfo SysDirectoryInfo => new System.IO.DirectoryInfo( this.FullPath );
 
-		public override bool Exists
-		{
-			get
-			{
-				if (state == State.Uninitialized)
-				{
-					Refresh();
-				}
-				return state == State.Initialized &&
-					   (data.fileAttributes & System.IO.FileAttributes.Directory) == System.IO.FileAttributes.Directory;
-			}
-		}
-
-		public override string Name
-		{
-			get { return _name; }
-		}
-
-		public DirectoryInfo Parent
-		{
-			get
-			{
-				string fullPath = this.FullPath;
-				if (fullPath.Length > 3 && fullPath.EndsWith(Path.DirectorySeparatorChar))
-				{
-					fullPath = this.FullPath.Substring(0, this.FullPath.Length - 1);
-				}
-				string directoryName = Path.GetDirectoryName(fullPath);
-				return directoryName == null ? null : new DirectoryInfo(directoryName);
-			}
-		}
-
-		public DirectoryInfo Root
-		{
-			get
-			{
-				int rootLength = Path.GetRootLength(this.FullPath);
-				string str = this.FullPath.Substring(0, rootLength - (Common.IsPathUnc(FullPath) ? 1 : 0));
-				return new DirectoryInfo(str);
-			}
-		}
-
-		public DirectoryInfo(string path)
-		{
-			if (path == null) throw new ArgumentNullException("path");
-			OriginalPath = path;
-			FullPath = Path.GetFullPath(path);
-			_name = (OriginalPath.Length != 2 || OriginalPath[1] != ':' ? GetDirName(FullPath) : ".");
-		}
-
-		public void Create()
-		{
-			Directory.CreateDirectory(FullPath);
-		}
-
-		public DirectoryInfo CreateSubdirectory(string path)
-		{
-			var newDir = Path.Combine(FullPath, path);
-			var newFullPath = Path.GetFullPath(newDir);
-			if (string.Compare(FullPath, 0, newFullPath, 0, FullPath.Length, StringComparison.OrdinalIgnoreCase) != 0)
-			{
-				throw new ArgumentException("Invalid subpath", path);
-			}
-			Directory.CreateDirectory(newDir);
-			return new DirectoryInfo(newDir);
-		}
-
-		public override void Delete()
-		{
-			Directory.Delete(this.FullPath);
-		}
-
-		public void Delete(bool recursive)
-		{
-			Directory.Delete(FullPath, recursive);
-		}
-
-#if NET_4_0 || NET_4_5
-		public IEnumerable<DirectoryInfo> EnumerateDirectories(string searchPattern)
-		{
-		    if (Common.IsRunningOnMono()) return SysDirectoryInfo.EnumerateDirectories(searchPattern).Select(s => new DirectoryInfo(s.FullName));
-
-            return Directory.EnumerateFileSystemEntries(FullPath, searchPattern, true, false, System.IO.SearchOption.TopDirectoryOnly)
-				.Select(directory => new DirectoryInfo(directory));
-		}
-
-		public IEnumerable<DirectoryInfo> EnumerateDirectories(string searchPattern, SearchOption searchOption)
-		{
-		    if (Common.IsRunningOnMono()) return SysDirectoryInfo.EnumerateDirectories(searchPattern, searchOption).Select(s => new DirectoryInfo(s.FullName));
-
-            return Directory.EnumerateFileSystemEntries(FullPath, searchPattern, true, false, searchOption)
-				.Select(directory => new DirectoryInfo(directory));
-		}
-
-		public IEnumerable<FileInfo> EnumerateFiles()
-		{
-			return Directory.EnumerateFiles(FullPath).Select(e => new FileInfo(e));
-		}
-
-		public IEnumerable<FileInfo> EnumerateFiles(string searchPattern)
-		{
-		    if (Common.IsRunningOnMono()) return SysDirectoryInfo.EnumerateFiles(searchPattern).Select(s => new FileInfo(s.FullName));
-
-            return Directory.EnumerateFileSystemEntries(FullPath, searchPattern, false, true, System.IO.SearchOption.TopDirectoryOnly).Select(e => new FileInfo(e));
-		}
-
-		public IEnumerable<FileInfo> EnumerateFiles(string searchPattern, SearchOption searchOption)
-		{
-		    if (Common.IsRunningOnMono()) return SysDirectoryInfo.EnumerateFiles(searchPattern, searchOption).Select(s => new FileInfo(s.FullName));
-
-            return Directory.EnumerateFileSystemEntries(FullPath, searchPattern, false, true, searchOption).Select(e => new FileInfo(e));
-		}
-
-		public IEnumerable<FileSystemInfo> EnumerateFileSystemInfos()
-		{
-            return
-				Directory.EnumerateFileSystemEntries(FullPath)
-					.Select(e => Directory.Exists(e) ? (FileSystemInfo)new DirectoryInfo(e) : (FileSystemInfo)new FileInfo(e));
-		}
-
-		public IEnumerable<FileSystemInfo> EnumerateFileSystemInfos(string searchPattern)
-		{
-		    if (Common.IsRunningOnMono()) return SysDirectoryInfo.EnumerateFileSystemInfos(searchPattern)
-                    .Select(e => System.IO.Directory.Exists(e.FullName) ? (FileSystemInfo)new DirectoryInfo(e.FullName) : (FileSystemInfo)new FileInfo(e.FullName));
-
-            return Directory.EnumerateFileSystemEntries(FullPath, searchPattern, true, true, System.IO.SearchOption.TopDirectoryOnly)
-					.Select(e => Directory.Exists(e) ? (FileSystemInfo)new DirectoryInfo(e) : (FileSystemInfo)new FileInfo(e));
-		}
-#if NET_4_5
-		public IEnumerable<FileSystemInfo> EnumerateFileSystemInfos(string searchPattern, SearchOption searchOption)
-		{
-			return Directory.EnumerateFileSystemEntries(FullPath, searchPattern, searchOption)
-					.Select(e => Directory.Exists(e) ? (FileSystemInfo)new DirectoryInfo(e) : (FileSystemInfo)new FileInfo(e));
-		}
-#endif
-#endif //NET_4_0 || NET_4_5
-
-		private string GetDirName(string fullPath)
-		{
-			if (fullPath.Length <= 3) return fullPath;
-			var s = fullPath;
-			if (s.EndsWith(Path.DirectorySeparatorChar))
-			{
-				s = s.Substring(0, s.Length - 1);
-			}
-			return Path.GetFileName(s);
-		}
-
-		public void MoveTo(string destDirName)
-		{
-		    if (Common.IsRunningOnMono())
-		    {
-                SysDirectoryInfo.MoveTo(destDirName);
-		        return;
-		    }
-
-			if (destDirName == null) throw new ArgumentNullException("destDirName");
-#if NET_2_0
-			if (string.IsNullOrEmpty(destDirName))
-#else
-			if (string.IsNullOrWhiteSpace(destDirName))
-#endif
-				throw new ArgumentException("Empty filename", "destDirName");
-
-			string fullDestDirName = Path.GetFullPath(destDirName);
-			if (!fullDestDirName.EndsWith(Path.DirectorySeparatorChar))
-				fullDestDirName = fullDestDirName + Path.DirectorySeparatorChar;
-			String fullSourcePath;
-			if (FullPath.EndsWith(Path.DirectorySeparatorChar))
-				fullSourcePath = FullPath;
-			else
-				fullSourcePath = FullPath + Path.DirectorySeparatorChar;
-
-			if (String.Compare(fullSourcePath, fullDestDirName, StringComparison.OrdinalIgnoreCase) == 0)
-				throw new IOException("source and destination directories must be different");
-
-			String sourceRoot = Path.GetPathRoot(fullSourcePath);
-			String destinationRoot = Path.GetPathRoot(fullDestDirName);
-
-			if (String.Compare(sourceRoot, destinationRoot, StringComparison.OrdinalIgnoreCase) != 0)
-				throw new IOException("Source and destination directories must have same root");
-
-			File.Move(fullSourcePath, fullDestDirName);
-		}
-
-		public void Create(DirectorySecurity directorySecurity)
-		{
-			Directory.CreateDirectory(FullPath, directorySecurity);
-		}
-
-		public DirectoryInfo CreateSubdirectory(string path, DirectorySecurity directorySecurity)
-		{
-			var newDir = Path.Combine(FullPath, path);
-			var newFullPath = Path.GetFullPath(newDir);
-			if (string.Compare(FullPath, 0, newFullPath, 0, FullPath.Length, StringComparison.OrdinalIgnoreCase) != 0)
-			{
-				throw new ArgumentException("Invalid subpath", path);
-			}
-			Directory.CreateDirectory(newDir, directorySecurity);
-			return new DirectoryInfo(newDir);
-		}
-
-#if NET_4_0 || NET_4_5
-        public IEnumerable<DirectoryInfo> EnumerateDirectories()
-		{
-		    if (Common.IsRunningOnMono())
-            {
-                return SysDirectoryInfo.EnumerateDirectories().Select(s => new DirectoryInfo(s.FullName));
-            }
-
-            return Directory.EnumerateFileSystemEntries(FullPath, "*", true, false, System.IO.SearchOption.TopDirectoryOnly).Select(directory => new DirectoryInfo(directory));
-		}
-#endif
-
-		public DirectorySecurity GetAccessControl()
-		{
-			return Directory.GetAccessControl(FullPath);
-		}
-
-		public DirectorySecurity GetAccessControl(AccessControlSections includeSections)
-		{
-			return Directory.GetAccessControl(FullPath, includeSections);
-		}
-
-		public DirectoryInfo[] GetDirectories()
-		{
-			return Directory.GetDirectories(FullPath).Select(path => new DirectoryInfo(path)).ToArray();
-		}
-
-		public DirectoryInfo[] GetDirectories(string searchPattern)
-		{
-			return Directory.GetDirectories(FullPath, searchPattern).Select(path => new DirectoryInfo(path)).ToArray();
-		}
-
-		public DirectoryInfo[] GetDirectories(string searchPattern, SearchOption searchOption)
-		{
-			return Directory.GetDirectories(FullPath, searchPattern, searchOption).Select(path => new DirectoryInfo(path)).ToArray();
-		}
-
-		public FileInfo[] GetFiles(string searchPattern)
-		{
-			return Directory.GetFiles(FullPath, searchPattern).Select(path => new FileInfo(path)).ToArray();
-		}
-
-		public FileInfo[] GetFiles(string searchPattern, SearchOption searchOption)
-		{
-			return Directory.GetFiles(FullPath, searchPattern, searchOption).Select(path => new FileInfo(path)).ToArray();
-		}
-
-		public FileInfo[] GetFiles()
-		{
-		    if (Common.IsRunningOnMono())
-		    {
-		        var files = SysDirectoryInfo.GetFiles();
-                var ret = new FileInfo[files.Length];
-		        for (var index = 0; index < files.Length; index++)
-		            ret[index] = new FileInfo(files[index].FullName);
-
-		        return ret;
-		    }
-			return Directory.EnumerateFileSystemEntries(FullPath, "*", false, true, System.IO.SearchOption.TopDirectoryOnly).Select(path => new FileInfo(path)).ToArray();
-		}
-
-		public FileSystemInfo[] GetFileSystemInfos(string searchPattern)
-		{
-		    if (Common.IsRunningOnMono())
-		    {
-		        var sysInfos = SysDirectoryInfo.GetFileSystemInfos(searchPattern);
-                FileSystemInfo[] fsis = new FileSystemInfo[sysInfos.Length];
-                for (var i = 0; i < sysInfos.Length; i++)
-                {
-                    var e = sysInfos[i].FullName;
-                    fsis[i] = Directory.Exists(e)
-                        ? (FileSystemInfo) new DirectoryInfo(e)
-                        : (FileSystemInfo) new FileInfo(e);
+        public override Boolean Exists {
+            get {
+                if ( this.state == State.Uninitialized ) {
+                    this.Refresh();
                 }
-		        return fsis;
-		    }
-     
-            return Directory.EnumerateFileSystemEntries(FullPath, searchPattern, true, true, System.IO.SearchOption.TopDirectoryOnly)
-					.Select(e => Directory.Exists(e) ? (FileSystemInfo)new DirectoryInfo(e) : (FileSystemInfo)new FileInfo(e)).ToArray();
-		}
 
-        public FileSystemInfo[] GetFileSystemInfos(string searchPattern, SearchOption searchOption)
-		{
-            if (Common.IsRunningOnMono())
-            {
-#if NET_4_0 || NET_4_5
-                return SysDirectoryInfo.GetFileSystemInfos(searchPattern, searchOption).Select(s => s.FullName).Select(e => Directory.Exists(e) ? (FileSystemInfo)new DirectoryInfo(e) : (FileSystemInfo)new FileInfo(e)).ToArray();
-#else 
-                //throw new NotImplementedException("This function is not supported in ");
-                var fileInfos = SysDirectoryInfo.GetFiles(searchPattern);
-                var directories = SysDirectoryInfo.GetDirectories(searchPattern);
-                List<FileSystemInfo> fileSystemInfos = new List<FileSystemInfo>();
-                foreach (System.IO.FileInfo fsi in fileInfos)
-                    fileSystemInfos.Add(new FileInfo(fsi.FullName));
+                return this.state == State.Initialized && ( this.data.fileAttributes & FileAttributes.Directory ) == FileAttributes.Directory;
+            }
+        }
 
-                foreach (System.IO.DirectoryInfo fsi in directories)
-                    fileSystemInfos.Add(new DirectoryInfo(fsi.FullName));
+        public override String Name { get; }
 
-                if (searchOption != SearchOption.AllDirectories)
-                    return fileSystemInfos.ToArray();
+        [NotNull]
+        public DirectoryInfo Parent {
+            get {
+                var fullPath = this.FullPath;
 
-                foreach (var di in SysDirectoryInfo.GetDirectories())
-                    fileSystemInfos.AddRange(new DirectoryInfo(di.FullName).GetFileSystemInfos(searchPattern, searchOption));
+                if ( fullPath.Length > 3 && fullPath.EndsWith( Path.DirectorySeparatorChar ) ) {
+                    fullPath = this.FullPath.Substring( 0, this.FullPath.Length - 1 );
+                }
 
-                return fileSystemInfos.ToArray();
-#endif
+                var directoryName = fullPath.GetDirectoryName();
+
+                return new DirectoryInfo( directoryName );
+            }
+        }
+
+        [NotNull]
+        public DirectoryInfo Root {
+            get {
+                var rootLength = this.FullPath.GetRootLength();
+                var str = this.FullPath.Substring( 0, rootLength - ( this.FullPath.IsPathUnc() ? 1 : 0 ) );
+
+                return new DirectoryInfo( str );
+            }
+        }
+
+        [NotNull]
+        public override System.IO.FileSystemInfo SystemInfo => this.SysDirectoryInfo;
+
+        public DirectoryInfo( [NotNull] String path ) {
+            Common.ThrowIfBlank( ref path );
+
+            this.OriginalPath = path;
+            this.FullPath = path.GetFullPath();
+            this.Name = this.OriginalPath.Length != 2 || this.OriginalPath[ 1 ] != ':' ? GetDirName( this.FullPath ) : ".";
+        }
+
+        [NotNull]
+        public static String GetDirName( [NotNull] String fullPath ) {
+            Common.ThrowIfBlank( ref fullPath );
+
+            if ( fullPath.Length <= 3 ) {
+                return fullPath;
             }
 
-            return Directory.EnumerateFileSystemEntries(FullPath, searchPattern, true, true, searchOption)
-					.Select(e => Directory.Exists(e) ? (FileSystemInfo)new DirectoryInfo(e) : (FileSystemInfo)new FileInfo(e)).ToArray();
-		}
+            var s = fullPath;
 
-		public FileSystemInfo[] GetFileSystemInfos()
-		{
-		    if (Common.IsRunningOnMono())
-		    {
-		        if (Common.IsRunningOnMono())
-		        {
-		            var sysInfos = SysDirectoryInfo.GetFileSystemInfos();
-		            FileSystemInfo[] fsis = new FileSystemInfo[sysInfos.Length];
-		            for (var i = 0; i < sysInfos.Length; i++)
-		            {
-		                var e = sysInfos[i].FullName;
-		                fsis[i] = Directory.Exists(e)
-		                    ? (FileSystemInfo)new DirectoryInfo(e)
-		                    : (FileSystemInfo)new FileInfo(e);
-		            }
-		            return fsis;
-		        }
+            if ( s.EndsWith( Path.DirectorySeparatorChar ) ) {
+                s = s.Substring( 0, s.Length - 1 );
             }
 
-			return Directory.EnumerateFileSystemEntries(FullPath, "*", true, true, System.IO.SearchOption.TopDirectoryOnly)
-					.Select(e => Directory.Exists(e) ? (FileSystemInfo)new DirectoryInfo(e) : (FileSystemInfo)new FileInfo(e)).ToArray();
-		}
+            return s.GetFileName();
+        }
 
-		public void SetAccessControl(DirectorySecurity directorySecurity)
-		{
-			Directory.SetAccessControl(FullPath, directorySecurity);
-		}
+        public void Create() => this.FullPath.CreateDirectory();
 
-		public override string ToString()
-		{
-			return DisplayPath;
-		}
-	}
+        public void Create( [NotNull] DirectorySecurity directorySecurity ) => Directory.CreateDirectory( this.FullPath, directorySecurity );
 
-	public static class StringExtensions
-	{
-		public static bool EndsWith(this string text, char value)
-		{
-			if (string.IsNullOrEmpty(text)) return false;
+        [NotNull]
+        public DirectoryInfo CreateSubdirectory( [NotNull] String path ) {
+            var newDir = this.FullPath.Combine( path );
+            var newFullPath = newDir.GetFullPath();
 
-			return text[text.Length - 1] == value;
-		}
-	}
+            if ( String.Compare( this.FullPath, 0, newFullPath, 0, this.FullPath.Length, StringComparison.OrdinalIgnoreCase ) != 0 ) {
+                throw new ArgumentException( "Invalid subpath", path );
+            }
+
+            newDir.CreateDirectory();
+
+            return new DirectoryInfo( newDir );
+        }
+
+        [NotNull]
+        public DirectoryInfo CreateSubdirectory( [NotNull] String path, [NotNull] DirectorySecurity directorySecurity ) {
+            var newDir = this.FullPath.Combine( path );
+            var newFullPath = newDir.GetFullPath();
+
+            if ( String.Compare( this.FullPath, 0, newFullPath, 0, this.FullPath.Length, StringComparison.OrdinalIgnoreCase ) != 0 ) {
+                throw new ArgumentException( "Invalid subpath", path );
+            }
+
+            Directory.CreateDirectory( newDir, directorySecurity );
+
+            return new DirectoryInfo( newDir );
+        }
+
+        public override void Delete() => Directory.Delete( this.FullPath );
+
+        public void Delete( Boolean recursive ) => Directory.Delete( this.FullPath, recursive );
+
+        [NotNull]
+        public IEnumerable<DirectoryInfo> EnumerateDirectories( [NotNull] String searchPattern ) =>
+            Directory.EnumerateFileSystemEntries( this.FullPath, searchPattern, true, false, SearchOption.TopDirectoryOnly )
+                .Select( directory => new DirectoryInfo( directory ) );
+
+        [NotNull]
+        public IEnumerable<DirectoryInfo> EnumerateDirectories( [NotNull] String searchPattern, SearchOption searchOption ) =>
+            Directory.EnumerateFileSystemEntries( this.FullPath, searchPattern, true, false, searchOption ).Select( directory => new DirectoryInfo( directory ) );
+
+        [NotNull]
+        public IEnumerable<DirectoryInfo> EnumerateDirectories() =>
+            Directory.EnumerateFileSystemEntries( this.FullPath, "*", true, false, SearchOption.TopDirectoryOnly ).Select( directory => new DirectoryInfo( directory ) );
+
+        [NotNull]
+        public IEnumerable<FileInfo> EnumerateFiles() => Directory.EnumerateFiles( this.FullPath ).Select( e => new FileInfo( e ) );
+
+        [NotNull]
+        public IEnumerable<FileInfo> EnumerateFiles( [NotNull] String searchPattern ) =>
+            Directory.EnumerateFileSystemEntries( this.FullPath, searchPattern, false, true, SearchOption.TopDirectoryOnly ).Select( e => new FileInfo( e ) );
+
+        [NotNull]
+        public IEnumerable<FileInfo> EnumerateFiles( [NotNull] String searchPattern, SearchOption searchOption ) =>
+            Directory.EnumerateFileSystemEntries( this.FullPath, searchPattern, false, true, searchOption ).Select( e => new FileInfo( e ) );
+
+        [NotNull]
+        public IEnumerable<FileSystemInfo> EnumerateFileSystemInfos() =>
+            Directory.EnumerateFileSystemEntries( this.FullPath ).Select( e => e.Exists() ? new DirectoryInfo( e ) : ( FileSystemInfo ) new FileInfo( e ) );
+
+        [NotNull]
+        public IEnumerable<FileSystemInfo> EnumerateFileSystemInfos( [NotNull] String searchPattern ) =>
+            Directory.EnumerateFileSystemEntries( this.FullPath, searchPattern, true, true, SearchOption.TopDirectoryOnly )
+                .Select( e => e.Exists() ? new DirectoryInfo( e ) : ( FileSystemInfo ) new FileInfo( e ) );
+
+        [NotNull]
+        public IEnumerable<FileSystemInfo> EnumerateFileSystemInfos( [NotNull] String searchPattern, SearchOption searchOption ) =>
+            Directory.EnumerateFileSystemEntries( this.FullPath, searchPattern, searchOption )
+                .Select( e => e.Exists() ? new DirectoryInfo( e ) : ( FileSystemInfo ) new FileInfo( e ) );
+
+        [NotNull]
+        public DirectorySecurity GetAccessControl() => Directory.GetAccessControl( this.FullPath );
+
+        [NotNull]
+        public DirectorySecurity GetAccessControl( AccessControlSections includeSections ) => Directory.GetAccessControl( this.FullPath, includeSections );
+
+        [NotNull]
+        public IEnumerable<DirectoryInfo> GetDirectories() => Directory.GetDirectories( this.FullPath ).Select( path => new DirectoryInfo( path ) );
+
+        [NotNull]
+        public IEnumerable<DirectoryInfo> GetDirectories( [NotNull] String searchPattern ) =>
+            Directory.GetDirectories( this.FullPath, searchPattern ).Select( path => new DirectoryInfo( path ) );
+
+        [NotNull]
+        public IEnumerable<DirectoryInfo> GetDirectories( [NotNull] String searchPattern, SearchOption searchOption ) =>
+            this.FullPath.GetDirectories( searchPattern, searchOption ).Select( path => new DirectoryInfo( path ) );
+
+        [NotNull]
+        public IEnumerable<FileInfo> GetFiles( [NotNull] String searchPattern ) => Directory.GetFiles( this.FullPath, searchPattern ).Select( path => new FileInfo( path ) );
+
+        [NotNull]
+        public IEnumerable<FileInfo> GetFiles( [NotNull] String searchPattern, SearchOption searchOption ) =>
+            Directory.GetFiles( this.FullPath, searchPattern, searchOption ).Select( path => new FileInfo( path ) );
+
+        [NotNull]
+        public IEnumerable<FileInfo> GetFiles() =>
+            Directory.EnumerateFileSystemEntries( this.FullPath, "*", false, true, SearchOption.TopDirectoryOnly ).Select( path => new FileInfo( path ) );
+
+        [NotNull]
+        public IEnumerable<FileSystemInfo> GetFileSystemInfos( [NotNull] String searchPattern ) =>
+            Directory.EnumerateFileSystemEntries( this.FullPath, searchPattern, true, true, SearchOption.TopDirectoryOnly )
+                .Select( e => e.Exists() ? new DirectoryInfo( e ) : ( FileSystemInfo ) new FileInfo( e ) );
+
+        [NotNull]
+        public IEnumerable<FileSystemInfo> GetFileSystemInfos( [NotNull] String searchPattern, SearchOption searchOption ) =>
+            Directory.EnumerateFileSystemEntries( this.FullPath, searchPattern, true, true, searchOption )
+                .Select( e => e.Exists() ? new DirectoryInfo( e ) : ( FileSystemInfo ) new FileInfo( e ) );
+
+        [NotNull]
+        public IEnumerable<FileSystemInfo> GetFileSystemInfos() =>
+            Directory.EnumerateFileSystemEntries( this.FullPath, "*", true, true, SearchOption.TopDirectoryOnly )
+                .Select( e => e.Exists() ? new DirectoryInfo( e ) : ( FileSystemInfo ) new FileInfo( e ) );
+
+        public void MoveTo( [NotNull] String destDirName ) {
+            Common.ThrowIfBlank( ref destDirName );
+
+            var fullDestDirName = destDirName.GetFullPath();
+
+            if ( !fullDestDirName.EndsWith( Path.DirectorySeparatorChar ) ) {
+                fullDestDirName = fullDestDirName + Path.DirectorySeparatorChar;
+            }
+
+            String fullSourcePath;
+
+            if ( this.FullPath.EndsWith( Path.DirectorySeparatorChar ) ) {
+                fullSourcePath = this.FullPath;
+            }
+            else {
+                fullSourcePath = this.FullPath + Path.DirectorySeparatorChar;
+            }
+
+            if ( String.Compare( fullSourcePath, fullDestDirName, StringComparison.OrdinalIgnoreCase ) == 0 ) {
+                throw new IOException( "source and destination directories must be different" );
+            }
+
+            var sourceRoot = fullSourcePath.GetPathRoot();
+            var destinationRoot = fullDestDirName.GetPathRoot();
+
+            if ( String.Compare( sourceRoot, destinationRoot, StringComparison.OrdinalIgnoreCase ) != 0 ) {
+                throw new IOException( "Source and destination directories must have same root" );
+            }
+
+            File.Move( fullSourcePath, fullDestDirName );
+        }
+
+        public void SetAccessControl( [NotNull] DirectorySecurity directorySecurity ) {
+            if ( directorySecurity == null ) {
+                throw new ArgumentNullException( paramName: nameof( directorySecurity ) );
+            }
+
+            Directory.SetAccessControl( this.FullPath, directorySecurity );
+        }
+
+        public override String ToString() => this.DisplayPath;
+    }
 }
-#if NET_2_0
-namespace System.Runtime.CompilerServices
-{
-	[AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class
-		 | AttributeTargets.Method)]
-	public sealed class ExtensionAttribute : Attribute { }
-}
-#endif

@@ -1,10 +1,10 @@
-// Copyright � Rick@AIBrain.org and Protiguous. All Rights Reserved.
+﻿// Copyright © Rick@AIBrain.org and Protiguous. All Rights Reserved.
 //
 // This entire copyright notice and license must be retained and must be kept visible
 // in any binaries, libraries, repositories, and source code (directly or derived) from
 // our binaries, libraries, projects, or solutions.
 //
-// This source code contained in "SafeTokenHandle.cs" belongs to Protiguous@Protiguous.com and
+// This source code contained in "AssemblyInfo.cs" belongs to Protiguous@Protiguous.com and
 // Rick@AIBrain.org unless otherwise specified or the original license has
 // been overwritten by formatting.
 // (We try to avoid it from happening, but it does accidentally happen.)
@@ -37,32 +37,40 @@
 // Our GitHub address is "https://github.com/Protiguous".
 // Feel free to browse any source code we *might* make available.
 //
-// Project: "Pri.LongPath", "SafeTokenHandle.cs" was last formatted by Protiguous on 2019/01/12 at 8:28 PM.
+// Project: "Pri.Tests", "AssemblyInfo.cs" was last formatted by Protiguous on 2019/01/12 at 8:14 PM.
 
-namespace Pri.LongPath {
+using System.Reflection;
+using System.Runtime.InteropServices;
 
-    using System;
-    using System.Runtime.ConstrainedExecution;
-    using System.Runtime.InteropServices;
-    using System.Security;
-    using JetBrains.Annotations;
-    using Microsoft.Win32.SafeHandles;
+// General Information about an assembly is controlled through the following
+// set of attributes. Change these attribute values to modify the information
+// associated with an assembly.
+[assembly: AssemblyTitle( "Tests" )]
+[assembly: AssemblyDescription( "" )]
+[assembly: AssemblyConfiguration( "" )]
+[assembly: AssemblyCompany( "" )]
+[assembly: AssemblyProduct( "Tests" )]
+[assembly: AssemblyCopyright( "Copyright ©  2014" )]
+[assembly: AssemblyTrademark( "" )]
+[assembly: AssemblyCulture( "" )]
 
-    public class SafeTokenHandle : SafeHandleZeroOrMinusOneIsInvalid {
+// Setting ComVisible to false makes the types in this assembly not visible
+// to COM components.  If you need to access a type in this assembly from
+// COM, set the ComVisible attribute to true on that type.
+[assembly: ComVisible( false )]
 
-        [NotNull]
-        public static SafeTokenHandle InvalidHandle => new SafeTokenHandle( IntPtr.Zero );
+// The following GUID is for the ID of the typelib if this project is exposed to COM
+[assembly: Guid( "48a5082f-a02d-44c7-b71a-aa1a77dd75d8" )]
 
-        private SafeTokenHandle() : base( true ) { }
-
-        // 0 is an Invalid Handle
-        public SafeTokenHandle( IntPtr handle ) : base( true ) => this.SetHandle( handle );
-
-        [DllImport( "kernel32.dll", SetLastError = true )]
-        [SuppressUnmanagedCodeSecurity]
-        [ReliabilityContract( Consistency.WillNotCorruptState, Cer.Success )]
-        private static extern Boolean CloseHandle( IntPtr handle );
-
-        protected override Boolean ReleaseHandle() => CloseHandle( this.handle );
-    }
-}
+// Version information for an assembly consists of the following four values:
+//
+//      Major Version
+//      Minor Version
+//      Build Number
+//      Revision
+//
+// You can specify all the values or you can default the Build and Revision Numbers
+// by using the '*' as shown below:
+// [assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion( "2019.1.13.6" )]
+[assembly: AssemblyFileVersion( "2019.1.13.6" )]
