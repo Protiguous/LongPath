@@ -1,44 +1,3 @@
-// Copyright © Rick@AIBrain.org and Protiguous. All Rights Reserved.
-//
-// This entire copyright notice and license must be retained and must be kept visible
-// in any binaries, libraries, repositories, and source code (directly or derived) from
-// our binaries, libraries, projects, or solutions.
-//
-// This source code contained in "FileInfo.cs" belongs to Protiguous@Protiguous.com and
-// Rick@AIBrain.org unless otherwise specified or the original license has
-// been overwritten by formatting.
-// (We try to avoid it from happening, but it does accidentally happen.)
-//
-// Any unmodified portions of source code gleaned from other projects still retain their original
-// license and our thanks goes to those Authors. If you find your code in this source code, please
-// let us know so we can properly attribute you and include the proper license and/or copyright.
-//
-// If you want to use any of our code, you must contact Protiguous@Protiguous.com or
-// Sales@AIBrain.org for permission and a quote.
-//
-// Donations are accepted (for now) via
-//     bitcoin:1Mad8TxTqxKnMiHuZxArFvX8BuFEB9nqX2
-//     paypal@AIBrain.Org
-//     (We're still looking into other solutions! Any ideas?)
-//
-// =========================================================
-// Disclaimer:  Usage of the source code or binaries is AS-IS.
-//    No warranties are expressed, implied, or given.
-//    We are NOT responsible for Anything You Do With Our Code.
-//    We are NOT responsible for Anything You Do With Our Executables.
-//    We are NOT responsible for Anything You Do With Your Computer.
-// =========================================================
-//
-// Contact us by email if you have any questions, helpful criticism, or if you would like to use our code in your project(s).
-// For business inquiries, please contact me at Protiguous@Protiguous.com
-//
-// Our website can be found at "https://Protiguous.com/"
-// Our software can be found at "https://Protiguous.Software/"
-// Our GitHub address is "https://github.com/Protiguous".
-// Feel free to browse any source code we *might* make available.
-//
-// Project: "Pri.LongPath", "FileInfo.cs" was last formatted by Protiguous on 2019/01/12 at 8:26 PM.
-
 namespace Pri.LongPath {
 
     using System;
@@ -59,7 +18,9 @@ namespace Pri.LongPath {
                     this.Refresh();
                 }
 
-                return this.state == State.Initialized && ( this.data.fileAttributes & FileAttributes.Directory ) != FileAttributes.Directory;
+                var fileAttributeData = this.data;
+
+                return fileAttributeData != null && ( this.state == State.Initialized && ( fileAttributeData.fileAttributes & FileAttributes.Directory ) != FileAttributes.Directory );
             }
         }
 
@@ -80,6 +41,7 @@ namespace Pri.LongPath {
 
         public Int64 Length => this.GetFileLength();
 
+        [NotNull]
         public override String Name { get; }
 
         [NotNull]
@@ -88,28 +50,30 @@ namespace Pri.LongPath {
         [NotNull]
         public override System.IO.FileSystemInfo SystemInfo => this.SysFileInfo;
 
-        [CanBeNull]
+        [NotNull]
         public DirectoryInfo Directory => new DirectoryInfo( this.DirectoryName );
 
         public FileInfo( [NotNull] String fileName ) {
             this.OriginalPath = fileName;
             this.FullPath = fileName.GetFullPath();
             this.Name = fileName.GetFileName();
-            this.DisplayPath = GetDisplayPath( fileName );
+            this.DisplayPath = fileName;
         }
-
-        private static String GetDisplayPath( String originalPath ) => originalPath;
 
         private Int64 GetFileLength() {
             if ( this.state == State.Uninitialized ) {
                 this.Refresh();
             }
 
+            if ( this.data is null ) {
+                throw new IOException( $"Unable to obtain {nameof( FileAttributeData )} on {this.FullPath}." );
+            }
+
             if ( this.state == State.Error ) {
                 Common.ThrowIOError( this.errorCode, this.FullPath );
             }
 
-            return ( ( Int64 ) this.data.fileSizeHigh << 32 ) | ( this.data.fileSizeLow & 0xFFFFFFFFL );
+            return ( ( Int64 )this.data.fileSizeHigh << 32 ) | ( this.data.fileSizeLow & 0xFFFFFFFFL );
         }
 
         [NotNull]
@@ -143,7 +107,7 @@ namespace Pri.LongPath {
         [NotNull]
         public FileSecurity GetAccessControl( AccessControlSections includeSections ) => File.GetAccessControl( this.FullPath, includeSections );
 
-        public void MoveTo( String destFileName ) => File.Move( this.FullPath, destFileName );
+        public void MoveTo( [NotNull] String destFileName ) => File.Move( this.FullPath, destFileName );
 
         [NotNull]
         public FileStream Open( FileMode mode ) => this.Open( mode, FileAccess.ReadWrite, FileShare.None );
@@ -164,10 +128,10 @@ namespace Pri.LongPath {
         public FileStream OpenWrite() => File.Open( this.FullPath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None );
 
         [NotNull]
-        public FileInfo Replace( [NotNull] String destinationFilename, String backupFilename ) => this.Replace( destinationFilename, backupFilename, false );
+        public FileInfo Replace( [NotNull] String destinationFilename, [NotNull] String backupFilename ) => this.Replace( destinationFilename, backupFilename, false );
 
         [NotNull]
-        public FileInfo Replace( [NotNull] String destinationFilename, String backupFilename, Boolean ignoreMetadataErrors ) {
+        public FileInfo Replace( [NotNull] String destinationFilename, [NotNull] String backupFilename, Boolean ignoreMetadataErrors ) {
             File.Replace( this.FullPath, destinationFilename, backupFilename, ignoreMetadataErrors );
 
             return new FileInfo( destinationFilename );

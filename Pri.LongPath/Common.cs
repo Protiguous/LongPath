@@ -1,47 +1,7 @@
-﻿// Copyright © Rick@AIBrain.org and Protiguous. All Rights Reserved.
-//
-// This entire copyright notice and license must be retained and must be kept visible
-// in any binaries, libraries, repositories, and source code (directly or derived) from
-// our binaries, libraries, projects, or solutions.
-//
-// This source code contained in "Common.cs" belongs to Protiguous@Protiguous.com and
-// Rick@AIBrain.org unless otherwise specified or the original license has
-// been overwritten by formatting.
-// (We try to avoid it from happening, but it does accidentally happen.)
-//
-// Any unmodified portions of source code gleaned from other projects still retain their original
-// license and our thanks goes to those Authors. If you find your code in this source code, please
-// let us know so we can properly attribute you and include the proper license and/or copyright.
-//
-// If you want to use any of our code, you must contact Protiguous@Protiguous.com or
-// Sales@AIBrain.org for permission and a quote.
-//
-// Donations are accepted (for now) via
-//     bitcoin:1Mad8TxTqxKnMiHuZxArFvX8BuFEB9nqX2
-//     paypal@AIBrain.Org
-//     (We're still looking into other solutions! Any ideas?)
-//
-// =========================================================
-// Disclaimer:  Usage of the source code or binaries is AS-IS.
-//    No warranties are expressed, implied, or given.
-//    We are NOT responsible for Anything You Do With Our Code.
-//    We are NOT responsible for Anything You Do With Our Executables.
-//    We are NOT responsible for Anything You Do With Your Computer.
-// =========================================================
-//
-// Contact us by email if you have any questions, helpful criticism, or if you would like to use our code in your project(s).
-// For business inquiries, please contact me at Protiguous@Protiguous.com
-//
-// Our website can be found at "https://Protiguous.com/"
-// Our software can be found at "https://Protiguous.Software/"
-// Our GitHub address is "https://github.com/Protiguous".
-// Feel free to browse any source code we *might* make available.
-//
-// Project: "Pri.LongPath", "Common.cs" was last formatted by Protiguous on 2019/01/12 at 8:25 PM.
-
-namespace Pri.LongPath {
+﻿namespace Pri.LongPath {
 
     using System;
+    using System.ComponentModel;
     using System.IO;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
@@ -77,18 +37,20 @@ namespace Pri.LongPath {
             return buffer.ToString();
         }
 
-        public static Boolean EndsWith( [CanBeNull] this String text, Char value ) => !String.IsNullOrEmpty( text ) && text[ text.Length - 1 ] == value;
+        public static Boolean EndsWith( [CanBeNull] [NotNull] this String text, Char value ) => !String.IsNullOrEmpty( text ) && text[ text.Length - 1 ] == value;
 
         public static Boolean Exists( [NotNull] this String path, out Boolean isDirectory ) {
-            ThrowIfBlank( ref path );
+            path = path.ThrowIfBlank();
 
             if ( path.TryNormalizeLongPath( out var normalizedPath ) || path.IsPathUnc() ) {
-                var errorCode = TryGetFileAttributes( normalizedPath, out var attributes );
+                if ( !String.IsNullOrWhiteSpace( normalizedPath ) ) {
+                    var errorCode = TryGetFileAttributes( normalizedPath, out var attributes );
 
-                if ( errorCode == 0 && ( Int32 ) attributes != NativeMethods.INVALID_FILE_ATTRIBUTES ) {
-                    isDirectory = attributes.IsDirectory();
+                    if ( errorCode == 0 && ( Int32 )attributes != NativeMethods.INVALID_FILE_ATTRIBUTES ) {
+                        isDirectory = attributes.IsDirectory();
 
-                    return true;
+                        return true;
+                    }
                 }
             }
 
@@ -97,9 +59,7 @@ namespace Pri.LongPath {
             return false;
         }
 
-        public static FileAttributes GetAttributes( [NotNull] this String path ) {
-            ThrowIfBlank( ref path );
-
+        public static FileAttributes GetAttributes( [NotNull]  this String path ) {
             var normalizedPath = path.NormalizeLongPath();
 
             var errorCode = normalizedPath.TryGetDirectoryAttributes( out var fileAttributes );
@@ -111,8 +71,8 @@ namespace Pri.LongPath {
             return fileAttributes;
         }
 
-        public static FileAttributes GetAttributes( [NotNull] this String path, out Int32 errorCode ) {
-            ThrowIfBlank( ref path );
+        public static FileAttributes GetAttributes( [NotNull]  this String path, out Int32 errorCode ) {
+            path = path.ThrowIfBlank();
 
             var normalizedPath = path.NormalizeLongPath();
 
@@ -125,13 +85,13 @@ namespace Pri.LongPath {
         public static Exception GetExceptionFromLastWin32Error() => GetExceptionFromLastWin32Error( "path" );
 
         [NotNull]
-        public static Exception GetExceptionFromLastWin32Error( String parameterName ) => GetExceptionFromWin32Error( Marshal.GetLastWin32Error(), parameterName );
+        public static Exception GetExceptionFromLastWin32Error( [NotNull] String parameterName ) => GetExceptionFromWin32Error( Marshal.GetLastWin32Error(), parameterName );
 
         [NotNull]
         public static Exception GetExceptionFromWin32Error( Int32 errorCode ) => GetExceptionFromWin32Error( errorCode, "path" );
 
         [NotNull]
-        public static Exception GetExceptionFromWin32Error( Int32 errorCode, String parameterName ) {
+        public static Exception GetExceptionFromWin32Error( Int32 errorCode, [NotNull] String parameterName ) {
             var message = GetMessageFromErrorCode( errorCode );
 
             switch ( errorCode ) {
@@ -153,10 +113,9 @@ namespace Pri.LongPath {
             }
         }
 
-        public static FileAttributes GetFileAttributes( [NotNull] this String path ) {
-            ThrowIfBlank( ref path );
+        public static FileAttributes GetFileAttributes( [NotNull]  this String path ) {
 
-            var normalizedPath = path.NormalizeLongPath();
+            var normalizedPath = path.ThrowIfBlank().NormalizeLongPath();
 
             var errorCode = TryGetFileAttributes( normalizedPath, out var fileAttributes );
 
@@ -167,20 +126,20 @@ namespace Pri.LongPath {
             return fileAttributes;
         }
 
-        public static Boolean IsPathDots( [NotNull] this String path ) {
-            ThrowIfBlank( ref path );
+        public static Boolean IsPathDots( [NotNull]  this String path ) {
+            path = path.ThrowIfBlank();
 
             return path == "." || path == "..";
         }
 
-        public static Boolean IsPathUnc( [NotNull] this String path ) {
-            ThrowIfBlank( ref path );
+        public static Boolean IsPathUnc( [NotNull]  this String path ) {
+            path = path.ThrowIfBlank();
 
             if ( path.StartsWith( Path.UNCLongPathPrefix, StringComparison.Ordinal ) ) {
                 return true;
             }
 
-            return Uri.TryCreate( path, UriKind.Absolute, out var uri ) && uri.IsUnc;
+            return Uri.TryCreate( path.ThrowIfBlank(), UriKind.Absolute, out var uri ) && uri.IsUnc;
         }
 
         /// <summary>
@@ -189,8 +148,8 @@ namespace Pri.LongPath {
         /// <param name="path"></param>
         /// <param name="uri"></param>
         /// <returns></returns>
-        public static Boolean IsPathUnc( [NotNull] this String path, [CanBeNull] out Uri uri ) {
-            ThrowIfBlank( ref path );
+        public static Boolean IsPathUnc( [NotNull]  this String path, [CanBeNull] out Uri uri ) {
+            path = path.ThrowIfBlank();
 
             if ( path.StartsWith( Path.UNCLongPathPrefix, StringComparison.Ordinal ) ) {
                 uri = null;
@@ -198,14 +157,19 @@ namespace Pri.LongPath {
                 return true;
             }
 
-            return Uri.TryCreate( path, UriKind.Absolute, out uri ) && uri.IsUnc;
+            return Uri.TryCreate( path.ThrowIfBlank(), UriKind.Absolute, out uri ) && uri.IsUnc;
         }
 
         [NotNull]
-        public static String NormalizeSearchPattern( [NotNull] this String searchPattern ) =>
+        public static String NormalizeSearchPattern( [CanBeNull] [NotNull] this String searchPattern ) =>
             String.IsNullOrEmpty( searchPattern ) || searchPattern == "." ? "*" : searchPattern;
 
-        public static void SetAccessControlExtracted( [NotNull] FileSystemSecurity security, String name ) {
+        public static void SetAccessControlExtracted( [NotNull] this FileSystemSecurity security, [NotNull] String name ) {
+            if ( security == null ) {
+                throw new ArgumentNullException( paramName: nameof( security ) );
+            }
+
+            name = name.ThrowIfBlank();
 
             var includeSections = AccessControlSections.Owner | AccessControlSections.Group;
 
@@ -224,18 +188,18 @@ namespace Pri.LongPath {
             DiscretionaryAcl dacl = null;
 
             if ( ( includeSections & AccessControlSections.Owner ) != AccessControlSections.None ) {
-                owner = ( SecurityIdentifier ) security.GetOwner( typeof( SecurityIdentifier ) );
+                owner = security.GetOwner( typeof( SecurityIdentifier ) ) as SecurityIdentifier;
 
                 if ( owner != null ) {
-                    securityInfo = securityInfo | ( UInt32 ) SecurityInfos.Owner;
+                    securityInfo |= ( UInt32 )SecurityInfos.Owner;
                 }
             }
 
             if ( ( includeSections & AccessControlSections.Group ) != AccessControlSections.None ) {
-                group = ( SecurityIdentifier ) security.GetGroup( typeof( SecurityIdentifier ) );
+                group = security.GetGroup( typeof( SecurityIdentifier ) ) as SecurityIdentifier;
 
                 if ( group != null ) {
-                    securityInfo = securityInfo | ( UInt32 ) SecurityInfos.Group;
+                    securityInfo |= ( UInt32 )SecurityInfos.Group;
                 }
             }
 
@@ -245,7 +209,7 @@ namespace Pri.LongPath {
             var isDiscretionaryAclPresent = ( rawSecurityDescriptor.ControlFlags & ControlFlags.DiscretionaryAclPresent ) != ControlFlags.None;
 
             if ( ( includeSections & AccessControlSections.Audit ) != AccessControlSections.None ) {
-                securityInfo = securityInfo | ( UInt32 ) SecurityInfos.SystemAcl;
+                securityInfo |= ( UInt32 )SecurityInfos.SystemAcl;
 
                 var isSystemAclPresent = ( rawSecurityDescriptor.ControlFlags & ControlFlags.SystemAclPresent ) != ControlFlags.None;
 
@@ -259,15 +223,15 @@ namespace Pri.LongPath {
                 }
 
                 if ( ( rawSecurityDescriptor.ControlFlags & ControlFlags.SystemAclProtected ) == ControlFlags.None ) {
-                    securityInfo = securityInfo | UnprotectedSystemAcl;
+                    securityInfo |= UnprotectedSystemAcl;
                 }
                 else {
-                    securityInfo = securityInfo | ProtectedSystemAcl;
+                    securityInfo |= ProtectedSystemAcl;
                 }
             }
 
             if ( ( includeSections & AccessControlSections.Access ) != AccessControlSections.None && isDiscretionaryAclPresent ) {
-                securityInfo = securityInfo | ( UInt32 ) SecurityInfos.DiscretionaryAcl;
+                securityInfo |= ( UInt32 )SecurityInfos.DiscretionaryAcl;
 
                 dacl = new DiscretionaryAcl( false, false, rawSecurityDescriptor.DiscretionaryAcl );
 
@@ -280,7 +244,7 @@ namespace Pri.LongPath {
                 return;
             }
 
-            var errorNum = SetSecurityInfo( ResourceType.FileObject, name, default, ( SecurityInfos ) securityInfo, owner, group, sacl, dacl ); //eh?
+            var errorNum = SetSecurityInfo( ResourceType.FileObject, name, ( SecurityInfos )securityInfo, owner, group, sacl, dacl ); //eh?
 
             if ( errorNum != 0 ) {
                 var exception = GetExceptionFromWin32Error( errorNum, name );
@@ -289,28 +253,26 @@ namespace Pri.LongPath {
             }
         }
 
-        public static void SetAttributes( [NotNull] this String path, FileAttributes fileAttributes ) {
-            ThrowIfBlank( ref path );
-
-            var normalizedPath = path.NormalizeLongPath();
+        public static void SetAttributes( [NotNull]  this String path, FileAttributes fileAttributes ) {
+            var normalizedPath = path.ThrowIfBlank().NormalizeLongPath();
 
             if ( !NativeMethods.SetFileAttributes( normalizedPath, fileAttributes ) ) {
                 throw GetExceptionFromLastWin32Error();
             }
-
-            if ( String.IsNullOrWhiteSpace( value: path ) ) {
-                throw new ArgumentException( message: "Value cannot be null or whitespace.", paramName: nameof( path ) );
-            }
         }
 
-        public static Int32 SetSecurityInfo( ResourceType type, [NotNull] String name, [NotNull] SafeHandle handle, SecurityInfos securityInformation,
+        public static Int32 SetSecurityInfo( ResourceType type, [NotNull] String name, SecurityInfos securityInformation,
             [CanBeNull] SecurityIdentifier owner, [CanBeNull] SecurityIdentifier group, [CanBeNull] GenericAcl sacl, [CanBeNull] GenericAcl dacl ) {
-            if ( handle == null ) {
-                throw new ArgumentNullException( paramName: nameof( handle ) );
+
+            name = name.ThrowIfBlank();
+
+            if ( !Enum.IsDefined( enumType: typeof( ResourceType ), type ) ) {
+                throw new InvalidEnumArgumentException( argumentName: nameof( type ), invalidValue: ( Int32 )type, enumClass: typeof( ResourceType ) );
             }
 
-            if ( String.IsNullOrEmpty( value: name ) ) {
-                throw new ArgumentException( message: "Value cannot be null or empty.", paramName: nameof( name ) );
+            if ( !Enum.IsDefined( enumType: typeof( SecurityInfos ), securityInformation ) ) {
+                throw new InvalidEnumArgumentException( argumentName: nameof( securityInformation ), invalidValue: ( Int32 )securityInformation,
+                    enumClass: typeof( SecurityInfos ) );
             }
 
             Int32 errorCode;
@@ -369,7 +331,7 @@ namespace Pri.LongPath {
                     }
                 }
 
-                errorCode = ( Int32 ) NativeMethods.SetSecurityInfoByName( name, ( UInt32 ) type, ( UInt32 ) securityInformation, OwnerBinary, GroupBinary, DaclBinary,
+                errorCode = ( Int32 )NativeMethods.SetSecurityInfoByName( name, ( UInt32 )type, ( UInt32 )securityInformation, OwnerBinary, GroupBinary, DaclBinary,
                     SaclBinary );
 
                 switch ( errorCode ) {
@@ -410,21 +372,19 @@ namespace Pri.LongPath {
         }
 
         /// <summary>
-        ///     I honestly don't know if this being a ref is a good idea or not..
+        /// Returns the trimmed string or throws <see cref="ArgumentNullException"/> if null, whitespace, or empty.
         /// </summary>
         /// <param name="path"></param>
-        /// <exception cref="ArgumentException">Gets thrown if the <paramref name="path" /> is null, whitespace, or empty.</exception>
+        /// <exception cref="ArgumentNullException">Gets thrown if the <paramref name="path" /> is null, whitespace, or empty.</exception>
         [MethodImpl( MethodImplOptions.AggressiveInlining )]
-        public static void ThrowIfBlank( [NotNull] ref String path ) {
-            if ( String.IsNullOrWhiteSpace( value: path ) ) {
+        [NotNull]
+        [Pure]
+        public static String ThrowIfBlank( this String path ) {
+            if ( String.IsNullOrWhiteSpace( path = path?.Trim() ) ) {
                 throw new ArgumentException( message: "Value cannot be null or whitespace.", paramName: nameof( path ) );
             }
 
-            path = path.Trim();
-
-            if ( String.IsNullOrEmpty( value: path ) ) {
-                throw new ArgumentException( message: "Value cannot be null or whitespace.", paramName: nameof( path ) );
-            }
+            return path;
         }
 
         public static void ThrowIfError( Int32 errorCode, IntPtr byteArray ) {
@@ -459,7 +419,10 @@ namespace Pri.LongPath {
             }
         }
 
-        public static void ThrowIOError( Int32 errorCode, String maybeFullPath ) {
+        public static void ThrowIOError( Int32 errorCode, [NotNull] String maybeFullPath ) {
+            if ( String.IsNullOrWhiteSpace( value: maybeFullPath ) ) {
+                throw new ArgumentException( message: "Value cannot be null or whitespace.", paramName: nameof( maybeFullPath ) );
+            }
 
             // This doesn't have to be perfect, but is a perf optimization.
             var isInvalidPath = errorCode == NativeMethods.ERROR_INVALID_NAME || errorCode == NativeMethods.ERROR_BAD_PATHNAME;
@@ -552,24 +515,17 @@ namespace Pri.LongPath {
             return securityInfos;
         }
 
-        public static Int32 TryGetDirectoryAttributes( [NotNull] this String normalizedPath, out FileAttributes attributes ) {
-            ThrowIfBlank( ref normalizedPath );
-
-            var errorCode = TryGetFileAttributes( normalizedPath, out attributes );
-
-            return errorCode;
-        }
+        public static Int32 TryGetDirectoryAttributes( [NotNull]  this String normalizedPath, out FileAttributes attributes ) => TryGetFileAttributes( normalizedPath.ThrowIfBlank(), out attributes );
 
         public static Int32 TryGetFileAttributes( [NotNull] String normalizedPath, out FileAttributes attributes ) {
-            ThrowIfBlank( ref normalizedPath );
 
-            var data = new NativeMethods.WIN32_FILE_ATTRIBUTE_DATA();
+            var data = new WIN32_FILE_ATTRIBUTE_DATA();
 
             var errorMode = NativeMethods.SetErrorMode( 1 );
 
             try {
 
-                if ( NativeMethods.GetFileAttributesEx( normalizedPath, 0, ref data ) ) {
+                if ( NativeMethods.GetFileAttributesEx( normalizedPath.ThrowIfBlank(), 0, ref data ) ) {
                     attributes = data.fileAttributes;
 
                     return SUCCESS;
@@ -579,7 +535,7 @@ namespace Pri.LongPath {
                 NativeMethods.SetErrorMode( errorMode );
             }
 
-            attributes = ( FileAttributes ) NativeMethods.INVALID_FILE_ATTRIBUTES;
+            attributes = ( FileAttributes )NativeMethods.INVALID_FILE_ATTRIBUTES;
 
             return Marshal.GetLastWin32Error();
         }

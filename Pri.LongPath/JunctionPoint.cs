@@ -1,45 +1,4 @@
-﻿// Copyright © Rick@AIBrain.org and Protiguous. All Rights Reserved.
-//
-// This entire copyright notice and license must be retained and must be kept visible
-// in any binaries, libraries, repositories, and source code (directly or derived) from
-// our binaries, libraries, projects, or solutions.
-//
-// This source code contained in "JunctionPoint.cs" belongs to Protiguous@Protiguous.com and
-// Rick@AIBrain.org unless otherwise specified or the original license has
-// been overwritten by formatting.
-// (We try to avoid it from happening, but it does accidentally happen.)
-//
-// Any unmodified portions of source code gleaned from other projects still retain their original
-// license and our thanks goes to those Authors. If you find your code in this source code, please
-// let us know so we can properly attribute you and include the proper license and/or copyright.
-//
-// If you want to use any of our code, you must contact Protiguous@Protiguous.com or
-// Sales@AIBrain.org for permission and a quote.
-//
-// Donations are accepted (for now) via
-//     bitcoin:1Mad8TxTqxKnMiHuZxArFvX8BuFEB9nqX2
-//     paypal@AIBrain.Org
-//     (We're still looking into other solutions! Any ideas?)
-//
-// =========================================================
-// Disclaimer:  Usage of the source code or binaries is AS-IS.
-//    No warranties are expressed, implied, or given.
-//    We are NOT responsible for Anything You Do With Our Code.
-//    We are NOT responsible for Anything You Do With Our Executables.
-//    We are NOT responsible for Anything You Do With Your Computer.
-// =========================================================
-//
-// Contact us by email if you have any questions, helpful criticism, or if you would like to use our code in your project(s).
-// For business inquiries, please contact me at Protiguous@Protiguous.com
-//
-// Our website can be found at "https://Protiguous.com/"
-// Our software can be found at "https://Protiguous.Software/"
-// Our GitHub address is "https://github.com/Protiguous".
-// Feel free to browse any source code we *might* make available.
-//
-// Project: "Pri.LongPath", "JunctionPoint.cs" was last formatted by Protiguous on 2019/01/12 at 8:27 PM.
-
-namespace Pri.LongPath {
+﻿namespace Pri.LongPath {
 
     using System;
     using System.IO;
@@ -195,11 +154,11 @@ namespace Pri.LongPath {
             Delete = 0x00000004
         }
 
-        [DllImport( DLL.kernel32, SetLastError = true )]
-        private static extern IntPtr CreateFile( String lpFileName, EFileAccess dwDesiredAccess, EFileShare dwShareMode, IntPtr lpSecurityAttributes,
+        [DllImport( DLL.kernel32, BestFitMapping = false, SetLastError = true )]
+        private static extern IntPtr CreateFile( [NotNull] String lpFileName, EFileAccess dwDesiredAccess, EFileShare dwShareMode, IntPtr lpSecurityAttributes,
             ECreationDisposition dwCreationDisposition, EFileAttributes dwFlagsAndAttributes, IntPtr hTemplateFile );
 
-        [DllImport( DLL.kernel32, CharSet = CharSet.Auto, SetLastError = true )]
+        [DllImport( DLL.kernel32, BestFitMapping = false, CharSet = CharSet.Auto, SetLastError = true )]
         private static extern Boolean DeviceIoControl( IntPtr hDevice, UInt32 dwIoControlCode, IntPtr InBuffer, Int32 nInBufferSize, IntPtr OutBuffer, Int32 nOutBufferSize,
             out Int32 pBytesReturned, IntPtr lpOverlapped );
 
@@ -222,7 +181,7 @@ namespace Pri.LongPath {
                     ThrowLastWin32Error( "Unable to get information about junction point." );
                 }
 
-                var reparseDataBuffer = ( REPARSE_DATA_BUFFER ) Marshal.PtrToStructure( outBuffer, typeof( REPARSE_DATA_BUFFER ) );
+                var reparseDataBuffer = ( REPARSE_DATA_BUFFER )Marshal.PtrToStructure( outBuffer, typeof( REPARSE_DATA_BUFFER ) );
 
                 if ( reparseDataBuffer.ReparseTag != IO_REPARSE_TAG_MOUNT_POINT ) {
                     return null;
@@ -242,7 +201,7 @@ namespace Pri.LongPath {
         }
 
         [NotNull]
-        private static SafeFileHandle OpenReparsePoint( String reparsePoint, EFileAccess accessMode ) {
+        private static SafeFileHandle OpenReparsePoint( [NotNull] String reparsePoint, EFileAccess accessMode ) {
             var reparsePointHandle =
                 new SafeFileHandle(
                     CreateFile( reparsePoint, accessMode, EFileShare.Read | EFileShare.Write | EFileShare.Delete, IntPtr.Zero, ECreationDisposition.OpenExisting,
@@ -255,7 +214,7 @@ namespace Pri.LongPath {
             return reparsePointHandle;
         }
 
-        private static void ThrowLastWin32Error( String message ) => throw new IOException( message, Marshal.GetExceptionForHR( Marshal.GetHRForLastWin32Error() ) );
+        private static void ThrowLastWin32Error( [NotNull] String message ) => throw new IOException( message, Marshal.GetExceptionForHR( Marshal.GetHRForLastWin32Error() ) );
 
         /// <summary>
         ///     Creates a junction point from the specified directory to the specified target directory.
@@ -270,7 +229,7 @@ namespace Pri.LongPath {
         ///     Thrown when the junction point could not be created or when
         ///     an existing directory was found and <paramref name="overwrite" /> if false
         /// </exception>
-        public static void Create( [NotNull] String junctionPoint, String targetDir, Boolean overwrite ) {
+        public static void Create( [NotNull] String junctionPoint, [NotNull] String targetDir, Boolean overwrite ) {
             targetDir = targetDir.GetFullPath();
 
             if ( !targetDir.Exists() ) {
@@ -291,10 +250,10 @@ namespace Pri.LongPath {
 
                 var reparseDataBuffer = new REPARSE_DATA_BUFFER {
                     ReparseTag = IO_REPARSE_TAG_MOUNT_POINT,
-                    ReparseDataLength = ( UInt16 ) ( targetDirBytes.Length + 12 ),
+                    ReparseDataLength = ( UInt16 )( targetDirBytes.Length + 12 ),
                     SubstituteNameOffset = 0,
-                    SubstituteNameLength = ( UInt16 ) targetDirBytes.Length,
-                    PrintNameOffset = ( UInt16 ) ( targetDirBytes.Length + 2 ),
+                    SubstituteNameLength = ( UInt16 )targetDirBytes.Length,
+                    PrintNameOffset = ( UInt16 )( targetDirBytes.Length + 2 ),
                     PrintNameLength = 0,
                     PathBuffer = new Byte[ 0x3ff0 ]
                 };
@@ -339,7 +298,9 @@ namespace Pri.LongPath {
 
             using ( var handle = OpenReparsePoint( junctionPoint, EFileAccess.GenericWrite ) ) {
                 var reparseDataBuffer = new REPARSE_DATA_BUFFER {
-                    ReparseTag = IO_REPARSE_TAG_MOUNT_POINT, ReparseDataLength = 0, PathBuffer = new Byte[ 0x3ff0 ]
+                    ReparseTag = IO_REPARSE_TAG_MOUNT_POINT,
+                    ReparseDataLength = 0,
+                    PathBuffer = new Byte[ 0x3ff0 ]
                 };
 
                 var inBufferSize = Marshal.SizeOf( reparseDataBuffer );
@@ -377,11 +338,12 @@ namespace Pri.LongPath {
         ///     or some other error occurs
         /// </exception>
         public static Boolean Exists( [NotNull] String path ) {
+            path = path.ThrowIfBlank();
             if ( !path.Exists() ) {
                 return false;
             }
 
-            using ( var handle = OpenReparsePoint( path, EFileAccess.GenericRead ) ) {
+            using ( var handle = OpenReparsePoint( path.ThrowIfBlank(), EFileAccess.GenericRead ) ) {
                 var target = InternalGetTarget( handle );
 
                 return target != null;
@@ -401,7 +363,7 @@ namespace Pri.LongPath {
         ///     exist, is invalid, is not a junction point, or some other error occurs
         /// </exception>
         [NotNull]
-        public static String GetTarget( String junctionPoint ) {
+        public static String GetTarget( [NotNull] String junctionPoint ) {
             using ( var handle = OpenReparsePoint( junctionPoint, EFileAccess.GenericRead ) ) {
                 var target = InternalGetTarget( handle );
 

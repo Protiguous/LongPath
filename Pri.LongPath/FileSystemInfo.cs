@@ -1,45 +1,4 @@
-﻿// Copyright © Rick@AIBrain.org and Protiguous. All Rights Reserved.
-//
-// This entire copyright notice and license must be retained and must be kept visible
-// in any binaries, libraries, repositories, and source code (directly or derived) from
-// our binaries, libraries, projects, or solutions.
-//
-// This source code contained in "FileSystemInfo.cs" belongs to Protiguous@Protiguous.com and
-// Rick@AIBrain.org unless otherwise specified or the original license has
-// been overwritten by formatting.
-// (We try to avoid it from happening, but it does accidentally happen.)
-//
-// Any unmodified portions of source code gleaned from other projects still retain their original
-// license and our thanks goes to those Authors. If you find your code in this source code, please
-// let us know so we can properly attribute you and include the proper license and/or copyright.
-//
-// If you want to use any of our code, you must contact Protiguous@Protiguous.com or
-// Sales@AIBrain.org for permission and a quote.
-//
-// Donations are accepted (for now) via
-//     bitcoin:1Mad8TxTqxKnMiHuZxArFvX8BuFEB9nqX2
-//     paypal@AIBrain.Org
-//     (We're still looking into other solutions! Any ideas?)
-//
-// =========================================================
-// Disclaimer:  Usage of the source code or binaries is AS-IS.
-//    No warranties are expressed, implied, or given.
-//    We are NOT responsible for Anything You Do With Our Code.
-//    We are NOT responsible for Anything You Do With Our Executables.
-//    We are NOT responsible for Anything You Do With Your Computer.
-// =========================================================
-//
-// Contact us by email if you have any questions, helpful criticism, or if you would like to use our code in your project(s).
-// For business inquiries, please contact me at Protiguous@Protiguous.com
-//
-// Our website can be found at "https://Protiguous.com/"
-// Our software can be found at "https://Protiguous.Software/"
-// Our GitHub address is "https://github.com/Protiguous".
-// Feel free to browse any source code we *might* make available.
-//
-// Project: "Pri.LongPath", "FileSystemInfo.cs" was last formatted by Protiguous on 2019/01/12 at 8:27 PM.
-
-namespace Pri.LongPath {
+﻿namespace Pri.LongPath {
 
     using System;
     using System.IO;
@@ -50,12 +9,15 @@ namespace Pri.LongPath {
 
     public abstract class FileSystemInfo {
 
+        [CanBeNull]
         protected FileAttributeData data;
 
         protected Int32 errorCode;
 
+        [NotNull]
         protected String FullPath;
 
+        [NotNull]
         protected String OriginalPath;
 
         protected State state;
@@ -144,7 +106,7 @@ namespace Pri.LongPath {
                     Common.ThrowIOError( this.errorCode, this.FullPath );
                 }
 
-                var fileTime = ( ( Int64 ) this.data.ftCreationTime.dwHighDateTime << 32 ) | ( this.data.ftCreationTime.dwLowDateTime & 0xffffffff );
+                var fileTime = ( ( Int64 )this.data.ftCreationTime.dwHighDateTime << 32 ) | ( this.data.ftCreationTime.dwLowDateTime & 0xffffffff );
 
                 return DateTime.FromFileTimeUtc( fileTime );
             }
@@ -162,6 +124,9 @@ namespace Pri.LongPath {
             }
         }
 
+        [NotNull]
+
+        // ReSharper disable once NotNullMemberIsNotInitialized
         public String DisplayPath { get; set; }
 
         public abstract Boolean Exists { get; }
@@ -169,6 +134,7 @@ namespace Pri.LongPath {
         [CanBeNull]
         public String Extension => this.FullPath.GetExtension();
 
+        [NotNull]
         public virtual String FullName => this.FullPath;
 
         public DateTime LastAccessTime {
@@ -187,7 +153,7 @@ namespace Pri.LongPath {
                     Common.ThrowIOError( this.errorCode, this.FullPath );
                 }
 
-                var fileTime = ( ( Int64 ) this.data.ftLastAccessTime.dwHighDateTime << 32 ) | ( this.data.ftLastAccessTime.dwLowDateTime & 0xffffffff );
+                var fileTime = ( ( Int64 )this.data.ftLastAccessTime.dwHighDateTime << 32 ) | ( this.data.ftLastAccessTime.dwLowDateTime & 0xffffffff );
 
                 return DateTime.FromFileTimeUtc( fileTime );
             }
@@ -195,7 +161,7 @@ namespace Pri.LongPath {
             set {
 
                 if ( this is DirectoryInfo ) {
-                    Directory.SetLastAccessTimeUtc( this.FullPath, value );
+                    this.FullPath.SetLastAccessTimeUtc( value );
                 }
                 else {
                     File.SetLastAccessTimeUtc( this.FullPath, value );
@@ -221,7 +187,7 @@ namespace Pri.LongPath {
                     ThrowLastWriteTimeUtcIOError( this.errorCode, this.FullPath );
                 }
 
-                var fileTime = ( ( Int64 ) this.data.ftLastWriteTime.dwHighDateTime << 32 ) | ( this.data.ftLastWriteTime.dwLowDateTime & 0xffffffff );
+                var fileTime = ( ( Int64 )this.data.ftLastWriteTime.dwHighDateTime << 32 ) | ( this.data.ftLastWriteTime.dwLowDateTime & 0xffffffff );
 
                 return DateTime.FromFileTimeUtc( fileTime );
             }
@@ -229,7 +195,7 @@ namespace Pri.LongPath {
             set {
 
                 if ( this is DirectoryInfo ) {
-                    Directory.SetLastWriteTimeUtc( this.FullPath, value ); //which is better?
+                    this.FullPath.SetLastWriteTimeUtc( value ); //which is better?
                 }
                 else {
                     File.SetLastWriteTimeUtc( this.FullPath, value );
@@ -252,7 +218,7 @@ namespace Pri.LongPath {
             Error
         }
 
-        private static void ThrowLastWriteTimeUtcIOError( Int32 errorCode, String maybeFullPath ) {
+        private static void ThrowLastWriteTimeUtcIOError( Int32 errorCode, [NotNull] String maybeFullPath ) {
 
             // This doesn't have to be perfect, but is a perf optimization.
             var isInvalidPath = errorCode == NativeMethods.ERROR_INVALID_NAME || errorCode == NativeMethods.ERROR_BAD_PATHNAME;
@@ -311,13 +277,15 @@ namespace Pri.LongPath {
 
         public abstract void Delete();
 
+        // ReSharper disable once UnusedParameter.Global
         public virtual void GetObjectData( [NotNull] SerializationInfo info, StreamingContext context ) {
-            info.AddValue( "OriginalPath", this.OriginalPath, typeof( String ) );
-            info.AddValue( "FullPath", this.FullPath, typeof( String ) );
+            info.AddValue( nameof( this.OriginalPath ), this.OriginalPath, typeof( String ) );
+            info.AddValue( nameof( this.FullPath ), this.FullPath, typeof( String ) );
         }
 
         public void Refresh() {
             try {
+                this.data = default;
 
                 // TODO: BeginFind fails on "\\?\c:\"
 
@@ -359,7 +327,7 @@ namespace Pri.LongPath {
 
             public FILETIME ftLastWriteTime;
 
-            public FileAttributeData( NativeMethods.WIN32_FIND_DATA findData ) {
+            public FileAttributeData( WIN32_FIND_DATA findData ) {
                 this.fileAttributes = findData.dwFileAttributes;
                 this.ftCreationTime = findData.ftCreationTime;
                 this.ftLastAccessTime = findData.ftLastAccessTime;
